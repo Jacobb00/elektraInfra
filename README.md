@@ -7,3 +7,7 @@ Bu kısım öncelikli olarak yapılacaktır. Kullanıcılar form arayüzü üzer
 
 ### 2. Gelişmiş Şablon Desteği
 Vakit kalırsa ileride site daha geniş templateler eklenecektir.
+
+
+aws ec2 canlı demo linki 
+http://44.222.242.231:3000/
