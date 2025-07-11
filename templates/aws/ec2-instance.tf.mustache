@@ -1,0 +1,101 @@
+# EC2 Instance - Teleform Generated
+# Generated at: {{timestamp}}
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+# Variables
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "{{instanceType}}"
+}
+
+variable "ami_id" {
+  description = "AMI ID for the instance"
+  type        = string
+  default     = "{{amiId}}"
+}
+
+{{#keyName}}
+variable "key_name" {
+  description = "Key pair name"
+  type        = string
+  default     = "{{keyName}}"
+}
+{{/keyName}}
+
+# EC2 Instance
+resource "aws_instance" "teleform_instance" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  
+  {{#keyName}}
+  key_name      = var.key_name
+  {{/keyName}}
+  
+  {{#securityGroup}}
+  vpc_security_group_ids = ["{{securityGroup}}"]
+  {{/securityGroup}}
+  
+  {{#subnetId}}
+  subnet_id = "{{subnetId}}"
+  {{/subnetId}}
+  
+  {{#hasUserData}}
+  user_data = <<-EOF
+{{userData}}
+EOF
+  {{/hasUserData}}
+
+  tags = {
+    {{#tags}}
+    Name        = "{{Name}}"
+    Environment = "{{Environment}}"
+    {{/tags}}
+    CreatedBy   = "Teleform"
+    ManagedBy   = "Terraform"
+  }
+
+  # Instance başlatıldığında çalışacak komutlar
+  {{#hasUserData}}
+  user_data_replace_on_change = true
+  {{/hasUserData}}
+}
+
+# Outputs
+output "instance_id" {
+  description = "EC2 instance ID"
+  value       = aws_instance.teleform_instance.id
+}
+
+output "instance_public_ip" {
+  description = "EC2 instance public IP"
+  value       = aws_instance.teleform_instance.public_ip
+}
+
+output "instance_private_ip" {
+  description = "EC2 instance private IP"
+  value       = aws_instance.teleform_instance.private_ip
+}
+
+output "instance_public_dns" {
+  description = "EC2 instance public DNS"
+  value       = aws_instance.teleform_instance.public_dns
+} 
