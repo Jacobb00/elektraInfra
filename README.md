@@ -10,5 +10,5 @@ Vakit kalırsa ileride site daha geniş templateler eklenecektir.
 
 
 aws ec2 canlı demo linki 
-teleform-talya.mooo.com
+https://teleform-talya.mooo.com
 ipv4 address http://44.222.242.231:3000/
