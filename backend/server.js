@@ -50,10 +50,11 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // ROUTE KONFIGÜRASYONU
 // =====================================================
 
-// API routes - Terraform kod üretimi endpoint'leri
-// /api prefix'i ile başlayan tüm istekleri terraform.js route handler'ına yönlendir
-// Örnek: POST /api/generate/ec2 → routes/terraform.js'deki ilgili handler'a gider
-app.use('/api', require('./routes/terraform'));
+// API routes - Modular route yapısı
+// /api prefix'i ile başlayan tüm istekleri yeni modular route handler'a yönlendir
+// Örnek: POST /api/aws/ec2 → routes/aws/ec2.js'deki handler'a gider
+// Legacy support: POST /api/generate/ec2 → routes/aws/ec2.js'deki handler'a gider
+app.use('/api', require('./routes'));
 
 // Ana sayfa route'u
 // Root URL'e (/) gelen GET isteklerinde index.html dosyasını döndür
