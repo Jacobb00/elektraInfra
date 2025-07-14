@@ -52,6 +52,22 @@
                 <h2><i class="fas fa-server"></i> EC2 Instance Konfigürasyonu</h2>
                 
                 <form id="terraformForm" class="terraform-form">
+                    <!-- Region Selection -->
+                    <div class="form-group">
+                        <label for="awsRegion">
+                            <i class="fas fa-globe-americas"></i>
+                            AWS Region
+                        </label>
+                        <select id="awsRegion" name="awsRegion" required>
+                            <option value="us-east-1" selected>US East (N. Virginia) - us-east-1</option>
+                            <option value="us-west-2">US West (Oregon) - us-west-2</option>
+                            <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+                            <option value="eu-central-1">Europe (Frankfurt) - eu-central-1</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
+                            <option value="ap-northeast-1">Asia Pacific (Tokyo) - ap-northeast-1</option>
+                        </select>
+                    </div>
+
                     <!-- Basic Configuration -->
                     <div class="form-group">
                         <label for="instanceType">
@@ -59,24 +75,47 @@
                             Instance Type
                         </label>
                         <select id="instanceType" name="instanceType" required>
-                            <option value="t2.nano">t2.nano (1 vCPU, 0.5 GB RAM)</option>
-                            <option value="t2.micro" selected>t2.micro (1 vCPU, 1 GB RAM)</option>
-                            <option value="t2.small">t2.small (1 vCPU, 2 GB RAM)</option>
-                            <option value="t2.medium">t2.medium (2 vCPU, 4 GB RAM)</option>
-                            <option value="t3.micro">t3.micro (2 vCPU, 1 GB RAM)</option>
-                            <option value="t3.small">t3.small (2 vCPU, 2 GB RAM)</option>
+                            <optgroup label="✅ Free Tier Eligible (750 hours/month)">
+                                <option value="t2.micro" selected>t2.micro (1 vCPU, 1 GB RAM) - FREE TIER</option>
+                            </optgroup>
+                            <optgroup label="💰 Burstable Performance (T2)">
+                                <option value="t2.nano">t2.nano (1 vCPU, 0.5 GB RAM)</option>
+                                <option value="t2.small">t2.small (1 vCPU, 2 GB RAM)</option>
+                                <option value="t2.medium">t2.medium (2 vCPU, 4 GB RAM)</option>
+                            </optgroup>
+                            <optgroup label="🚀 Burstable Performance (T3)">
+                                <option value="t3.nano">t3.nano (2 vCPU, 0.5 GB RAM)</option>
+                                <option value="t3.micro">t3.micro (2 vCPU, 1 GB RAM)</option>
+                                <option value="t3.small">t3.small (2 vCPU, 2 GB RAM)</option>
+                                <option value="t3.medium">t3.medium (2 vCPU, 4 GB RAM)</option>
+                            </optgroup>
                         </select>
+                        <small>💡 <strong>Free Tier:</strong> t2.micro 750 saat/ay ücretsiz (12 ay boyunca)</small>
                     </div>
 
+                    <!-- AMI Selection -->
                     <div class="form-group">
-                        <label for="amiId">
+                        <label for="amiType">
                             <i class="fas fa-compact-disc"></i>
-                            AMI ID
+                            Operating System
                         </label>
-                        <input type="text" id="amiId" name="amiId" 
-                               value="ami-0c02fb55956c7d316" 
-                               placeholder="ami-xxxxxxxxx">
-                        <small>Amazon Linux 2 AMI ID (us-east-1)</small>
+                        <select id="amiType" name="amiType" required>
+                            <optgroup label="🐧 Linux (Recommended)">
+                                <option value="amazon-linux-2023" selected>Amazon Linux 2023 (Free Tier)</option>
+                                <option value="amazon-linux-2">Amazon Linux 2 (Free Tier)</option>
+                                <option value="ubuntu-22-04">Ubuntu Server 22.04 LTS (Free Tier)</option>
+                                <option value="ubuntu-20-04">Ubuntu Server 20.04 LTS (Free Tier)</option>
+                            </optgroup>
+                            <optgroup label="🪟 Windows">
+                                <option value="windows-2022">Windows Server 2022</option>
+                                <option value="windows-2019">Windows Server 2019</option>
+                            </optgroup>
+                            <optgroup label="🎩 Enterprise">
+                                <option value="rhel-9">Red Hat Enterprise Linux 9</option>
+                                <option value="rhel-8">Red Hat Enterprise Linux 8</option>
+                            </optgroup>
+                        </select>
+                        <small>💡 <strong>Free Tier:</strong> Linux AMI'lar ücretsiz, Windows için lisans ücreti var</small>
                     </div>
 
                     <!-- Network Configuration -->
@@ -84,17 +123,19 @@
                         <div class="form-group">
                             <label for="keyName">
                                 <i class="fas fa-key"></i>
-                                Key Pair Name
+                                Key Pair Name (Opsiyonel)
                             </label>
                             <input type="text" id="keyName" name="keyName" placeholder="my-key-pair">
+                            <small>SSH erişimi için AWS Key Pair</small>
                         </div>
 
                         <div class="form-group">
                             <label for="securityGroup">
                                 <i class="fas fa-shield-alt"></i>
-                                Security Group ID
+                                Security Group ID (Opsiyonel)
                             </label>
                             <input type="text" id="securityGroup" name="securityGroup" placeholder="sg-xxxxxxxxx">
+                            <small>Mevcut Security Group kullan</small>
                         </div>
                     </div>
 
@@ -104,6 +145,18 @@
                             Subnet ID (Opsiyonel)
                         </label>
                         <input type="text" id="subnetId" name="subnetId" placeholder="subnet-xxxxxxxxx">
+                        <small>Mevcut VPC subnet kullan</small>
+                    </div>
+
+                    <!-- Storage Configuration -->
+                    <div class="form-group">
+                        <label for="rootVolumeSize">
+                            <i class="fas fa-hdd"></i>
+                            Root Volume Size (GB)
+                        </label>
+                        <input type="number" id="rootVolumeSize" name="rootVolumeSize" 
+                               value="8" min="8" max="30">
+                        <small>💡 <strong>Free Tier:</strong> 30 GB EBS General Purpose (SSD) ücretsiz</small>
                     </div>
 
                     <!-- Tags Configuration -->

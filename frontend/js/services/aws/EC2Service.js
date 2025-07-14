@@ -90,11 +90,13 @@ class EC2Service extends BaseService {
      */
     collectFormData() {
         // Form element'lerini al
+        const awsRegion = document.getElementById('awsRegion').value;
         const instanceType = document.getElementById('instanceType').value;
-        const amiId = document.getElementById('amiId').value;
+        const amiType = document.getElementById('amiType').value;
         const keyName = document.getElementById('keyName').value;
         const securityGroup = document.getElementById('securityGroup').value;
         const subnetId = document.getElementById('subnetId').value;
+        const rootVolumeSize = parseInt(document.getElementById('rootVolumeSize').value);
         const userData = document.getElementById('userData').value;
 
         // Tags topla
@@ -108,12 +110,21 @@ class EC2Service extends BaseService {
             }
         });
 
+        // Default tags from form inputs
+        const tagName = document.getElementById('tagName').value;
+        const tagEnvironment = document.getElementById('tagEnvironment').value;
+        
+        if (tagName) tags['Name'] = tagName;
+        if (tagEnvironment) tags['Environment'] = tagEnvironment;
+
         return {
+            awsRegion,
             instanceType,
-            amiId,
+            amiType,
             keyName,
             securityGroup,
             subnetId,
+            rootVolumeSize,
             userData,
             tags
         };
@@ -125,22 +136,27 @@ class EC2Service extends BaseService {
      * @returns {boolean} Validation result
      */
     validateForm(data) {
+        // AWS Region validation
+        if (!data.awsRegion) {
+            this.showNotification('AWS Region seçilmelidir', 'error');
+            return false;
+        }
+
         // Instance Type validation
         if (!data.instanceType) {
             this.showNotification('Instance Type seçilmelidir', 'error');
             return false;
         }
 
-        // AMI ID validation
-        if (!data.amiId) {
-            this.showNotification('AMI ID gereklidir', 'error');
+        // AMI Type validation
+        if (!data.amiType) {
+            this.showNotification('Operating System seçilmelidir', 'error');
             return false;
         }
 
-        // AMI ID format validation
-        const amiRegex = /^ami-[a-z0-9]{8,17}$/;
-        if (!amiRegex.test(data.amiId)) {
-            this.showNotification('AMI ID formatı geçersiz (örn: ami-0c02fb55956c7d316)', 'error');
+        // Root Volume Size validation
+        if (!data.rootVolumeSize || data.rootVolumeSize < 8 || data.rootVolumeSize > 30) {
+            this.showNotification('Root Volume Size 8-30 GB arasında olmalıdır', 'error');
             return false;
         }
 

@@ -1,5 +1,8 @@
 # EC2 Instance - Teleform Generated
 # Generated at: {{timestamp}}
+# Region: {{awsRegion}}
+# Instance Type: {{instanceType}}
+# Operating System: {{amiType}}
 
 terraform {
   required_providers {
@@ -14,11 +17,14 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Variables
+# =====================
+# VARIABLES
+# =====================
+
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-east-1"
+  default     = "{{awsRegion}}"
 }
 
 variable "instance_type" {
@@ -27,59 +33,289 @@ variable "instance_type" {
   default     = "{{instanceType}}"
 }
 
-variable "ami_id" {
-  description = "AMI ID for the instance"
+variable "ami_type" {
+  description = "Operating system type"
   type        = string
-  default     = "{{amiId}}"
+  default     = "{{amiType}}"
 }
 
-{{#keyName}}
+variable "root_volume_size" {
+  description = "Root volume size in GB"
+  type        = number
+  default     = {{rootVolumeSize}}
+}
+
+{{#hasKeyName}}
 variable "key_name" {
-  description = "Key pair name"
+  description = "EC2 key pair name"
   type        = string
   default     = "{{keyName}}"
 }
-{{/keyName}}
+{{/hasKeyName}}
 
-# EC2 Instance
-resource "aws_instance" "teleform_instance" {
-  ami           = var.ami_id
-  instance_type = var.instance_type
-  
-  {{#keyName}}
-  key_name      = var.key_name
-  {{/keyName}}
-  
-  {{#securityGroup}}
-  vpc_security_group_ids = ["{{securityGroup}}"]
-  {{/securityGroup}}
-  
-  {{#subnetId}}
-  subnet_id = "{{subnetId}}"
-  {{/subnetId}}
-  
-  {{#hasUserData}}
-  user_data = <<-EOF
-{{userData}}
-EOF
-  {{/hasUserData}}
+# =====================
+# AMI SEÇİMİ
+# =====================
 
-  tags = {
-    {{#tags}}
-    Name        = "{{Name}}"
-    Environment = "{{Environment}}"
-    {{/tags}}
-    CreatedBy   = "Teleform"
-    ManagedBy   = "Terraform"
+data "aws_ami" "selected" {
+  most_recent = true
+  
+  {{#amazon-linux-2023}}
+  owners = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
   }
-
-  # Instance başlatıldığında çalışacak komutlar
-  {{#hasUserData}}
-  user_data_replace_on_change = true
-  {{/hasUserData}}
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+  {{/amazon-linux-2023}}
+  
+  {{#amazon-linux-2}}
+  owners = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+  {{/amazon-linux-2}}
+  
+  {{#ubuntu-22-04}}
+  owners = ["099720109477"] # Canonical
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+  {{/ubuntu-22-04}}
+  
+  {{#ubuntu-20-04}}
+  owners = ["099720109477"] # Canonical
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+  {{/ubuntu-20-04}}
+  
+  {{#windows-2022}}
+  owners = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["Windows_Server-2022-English-Full-Base-*"]
+  }
+  filter {
+    name   = "platform"
+    values = ["windows"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+  {{/windows-2022}}
+  
+  {{#windows-2019}}
+  owners = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["Windows_Server-2019-English-Full-Base-*"]
+  }
+  filter {
+    name   = "platform"
+    values = ["windows"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+  {{/windows-2019}}
+  
+  {{#rhel-9}}
+  owners = ["309956199498"] # Red Hat
+  filter {
+    name   = "name"
+    values = ["RHEL-9.*-x86_64-*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+  {{/rhel-9}}
+  
+  {{#rhel-8}}
+  owners = ["309956199498"] # Red Hat
+  filter {
+    name   = "name"
+    values = ["RHEL-8.*-x86_64-*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+  {{/rhel-8}}
 }
 
-# Outputs
+# =====================
+# NETWORK RESOURCES
+# =====================
+
+{{^hasSecurityGroup}}
+data "aws_vpc" "default" {
+  default = true
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+resource "aws_security_group" "ec2_sg" {
+  name        = "teleform-ec2-sg-${random_id.suffix.hex}"
+  description = "Security group for Teleform EC2 instance"
+  vpc_id      = data.aws_vpc.default.id
+
+  # SSH access
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "SSH access"
+  }
+
+  # HTTP access
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "HTTP access"
+  }
+
+  # HTTPS access
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "HTTPS access"
+  }
+
+  # All outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "All outbound traffic"
+  }
+
+  tags = {
+    Name      = "teleform-ec2-sg"
+    CreatedBy = "Teleform"
+    ManagedBy = "Terraform"
+  }
+}
+{{/hasSecurityGroup}}
+
+# =====================
+# EC2 INSTANCE
+# =====================
+
+resource "aws_instance" "teleform_instance" {
+  ami                    = data.aws_ami.selected.id
+  instance_type          = var.instance_type
+  
+  {{#hasKeyName}}
+  key_name               = var.key_name
+  {{/hasKeyName}}
+  
+  {{#hasSecurityGroup}}
+  vpc_security_group_ids = ["{{securityGroup}}"]
+  {{/hasSecurityGroup}}
+  {{^hasSecurityGroup}}
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+  {{/hasSecurityGroup}}
+  
+  {{#hasSubnetId}}
+  subnet_id              = "{{subnetId}}"
+  {{/hasSubnetId}}
+
+  # Root volume configuration (Free Tier: 30GB)
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = var.root_volume_size
+    encrypted   = true
+
+    tags = {
+      Name      = "teleform-root-volume"
+      CreatedBy = "Teleform"
+      ManagedBy = "Terraform"
+    }
+  }
+
+  {{#hasUserData}}
+  user_data = base64encode(<<-EOF
+{{userData}}
+EOF
+  )
+  user_data_replace_on_change = true
+  {{/hasUserData}}
+
+  # Instance metadata options (security best practice)
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"  # Require IMDSv2
+    http_put_response_hop_limit = 1
+  }
+
+  tags = {
+    Name        = "{{tags.Name}}"
+    Environment = "{{tags.Environment}}"
+    CreatedBy   = "Teleform"
+    ManagedBy   = "Terraform"
+    AMI_Type    = var.ami_type
+    Region      = var.aws_region
+  }
+}
+
+# =====================
+# OUTPUTS
+# =====================
+
 output "instance_id" {
   description = "EC2 instance ID"
   value       = aws_instance.teleform_instance.id
@@ -98,4 +334,24 @@ output "instance_private_ip" {
 output "instance_public_dns" {
   description = "EC2 instance public DNS"
   value       = aws_instance.teleform_instance.public_dns
+}
+
+output "security_group_id" {
+  description = "Security group ID"
+  {{#hasSecurityGroup}}
+  value = "{{securityGroup}}"
+  {{/hasSecurityGroup}}
+  {{^hasSecurityGroup}}
+  value = aws_security_group.ec2_sg.id
+  {{/hasSecurityGroup}}
+}
+
+output "ami_id" {
+  description = "AMI ID used for the instance"
+  value       = data.aws_ami.selected.id
+}
+
+output "ami_name" {
+  description = "AMI name used for the instance"
+  value       = data.aws_ami.selected.name
 } 
