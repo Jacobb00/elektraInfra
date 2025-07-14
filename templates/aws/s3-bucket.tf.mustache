@@ -1,0 +1,188 @@
+# S3 Bucket - Teleform Generated
+# Generated at: {{timestamp}}
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+# Variables
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "bucket_name" {
+  description = "S3 bucket name"
+  type        = string
+  default     = "{{bucketName}}"
+}
+
+{{#bucketEnvironment}}
+variable "environment" {
+  description = "Environment tag"
+  type        = string
+  default     = "{{bucketEnvironment}}"
+}
+{{/bucketEnvironment}}
+
+# S3 Bucket
+resource "aws_s3_bucket" "teleform_bucket" {
+  bucket = var.bucket_name
+
+  tags = {
+    {{#tags}}
+    Name        = "{{Name}}"
+    Environment = "{{Environment}}"
+    {{/tags}}
+    CreatedBy   = "Teleform"
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Bucket Versioning
+{{#enableVersioning}}
+resource "aws_s3_bucket_versioning" "teleform_bucket_versioning" {
+  bucket = aws_s3_bucket.teleform_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+{{/enableVersioning}}
+
+# Server-side encryption
+{{#enableEncryption}}
+resource "aws_s3_bucket_server_side_encryption_configuration" "teleform_bucket_encryption" {
+  bucket = aws_s3_bucket.teleform_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+{{/enableEncryption}}
+
+# Public access block
+resource "aws_s3_bucket_public_access_block" "teleform_bucket_pab" {
+  bucket = aws_s3_bucket.teleform_bucket.id
+
+  block_public_acls       = {{#blockPublicAccess}}true{{/blockPublicAccess}}{{^blockPublicAccess}}false{{/blockPublicAccess}}
+  block_public_policy     = {{#blockPublicAccess}}true{{/blockPublicAccess}}{{^blockPublicAccess}}false{{/blockPublicAccess}}
+  ignore_public_acls      = {{#blockPublicAccess}}true{{/blockPublicAccess}}{{^blockPublicAccess}}false{{/blockPublicAccess}}
+  restrict_public_buckets = {{#blockPublicAccess}}true{{/blockPublicAccess}}{{^blockPublicAccess}}false{{/blockPublicAccess}}
+}
+
+# Static website hosting
+{{#enableWebsiteHosting}}
+resource "aws_s3_bucket_website_configuration" "teleform_bucket_website" {
+  bucket = aws_s3_bucket.teleform_bucket.id
+
+  index_document {
+    suffix = "{{indexDocument}}"
+  }
+
+  {{#errorDocument}}
+  error_document {
+    key = "{{errorDocument}}"
+  }
+  {{/errorDocument}}
+}
+
+# Bucket policy for website hosting
+resource "aws_s3_bucket_policy" "teleform_bucket_policy" {
+  bucket = aws_s3_bucket.teleform_bucket.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.teleform_bucket.arn}/*"
+      }
+    ]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.teleform_bucket_pab]
+}
+{{/enableWebsiteHosting}}
+
+# CORS configuration
+{{#enableCORS}}
+resource "aws_s3_bucket_cors_configuration" "teleform_bucket_cors" {
+  bucket = aws_s3_bucket.teleform_bucket.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "POST", "PUT", "DELETE", "HEAD"]
+    allowed_origins = [{{corsOriginsFormatted}}]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+{{/enableCORS}}
+
+# Lifecycle configuration
+{{#enableLifecycle}}
+resource "aws_s3_bucket_lifecycle_configuration" "teleform_bucket_lifecycle" {
+  bucket = aws_s3_bucket.teleform_bucket.id
+
+  rule {
+    id     = "lifecycle_rule"
+    status = "Enabled"
+
+    expiration {
+      days = {{lifecycleDays}}
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = {{noncurrentVersionDays}}
+    }
+  }
+}
+{{/enableLifecycle}}
+
+# Outputs
+output "bucket_id" {
+  description = "S3 bucket ID"
+  value       = aws_s3_bucket.teleform_bucket.id
+}
+
+output "bucket_arn" {
+  description = "S3 bucket ARN"
+  value       = aws_s3_bucket.teleform_bucket.arn
+}
+
+output "bucket_domain_name" {
+  description = "S3 bucket domain name"
+  value       = aws_s3_bucket.teleform_bucket.bucket_domain_name
+}
+
+{{#enableWebsiteHosting}}
+output "website_endpoint" {
+  description = "S3 bucket website endpoint"
+  value       = aws_s3_bucket_website_configuration.teleform_bucket_website.website_endpoint
+}
+
+output "website_domain" {
+  description = "S3 bucket website domain"
+  value       = aws_s3_bucket_website_configuration.teleform_bucket_website.website_domain
+}
+{{/enableWebsiteHosting}}
+
+output "bucket_region" {
+  description = "S3 bucket region"
+  value       = aws_s3_bucket.teleform_bucket.region
+} 

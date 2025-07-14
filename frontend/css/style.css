@@ -250,6 +250,60 @@ body {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
+/* Checkbox Styles */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.checkbox-label {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.checkbox-label:hover {
+    background-color: #f8fafc;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: #667eea;
+    cursor: pointer;
+}
+
+.checkbox-label span {
+    font-weight: 500;
+    color: #374151;
+    flex: 1;
+}
+
+.checkbox-label small {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 2px;
+    font-weight: normal;
+}
+
+/* Conditional Sections */
+.conditional-section {
+    margin-left: 20px;
+    margin-top: 15px;
+    padding: 15px;
+    border-left: 3px solid #e5e7eb;
+    background-color: #f8fafc;
+    border-radius: 0 8px 8px 0;
+}
+
 /* Buttons */
 .btn {
     display: inline-flex;

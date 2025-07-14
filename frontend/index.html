@@ -34,15 +34,15 @@
                         <h3>EC2 Instance</h3>
                         <p>Sanal sunucu oluştur</p>
                     </div>
-                    <div class="service-card disabled">
+                    <div class="service-card" data-service="rds">
                         <i class="fas fa-database"></i>
                         <h3>RDS Database</h3>
-                        <p>Yakında gelecek</p>
+                        <p>Veritabanı oluştur</p>
                     </div>
-                    <div class="service-card disabled">
+                    <div class="service-card" data-service="s3">
                         <i class="fas fa-hdd"></i>
                         <h3>S3 Bucket</h3>
-                        <p>Yakında gelecek</p>
+                        <p>Cloud storage oluştur</p>
                     </div>
                 </div>
             </section>
@@ -138,6 +138,408 @@
                         <button type="submit" id="generateBtn" class="btn btn-primary">
                             <i class="fas fa-download"></i>
                             Terraform Kodu Oluştur
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- S3 Bucket Form -->
+            <section id="s3Form" class="form-section" style="display: none;">
+                <h2><i class="fas fa-hdd"></i> S3 Bucket Konfigürasyonu</h2>
+                
+                <form id="s3TerraformForm" class="terraform-form">
+                    <!-- Basic Configuration -->
+                    <div class="form-group">
+                        <label for="bucketName">
+                            <i class="fas fa-bucket"></i>
+                            Bucket Name
+                        </label>
+                        <input type="text" id="bucketName" name="bucketName" 
+                               placeholder="my-unique-bucket-name" required>
+                        <small>Globally unique olmalı, lowercase, no spaces</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bucketEnvironment">
+                            <i class="fas fa-tag"></i>
+                            Environment
+                        </label>
+                        <select id="bucketEnvironment" name="bucketEnvironment">
+                            <option value="development" selected>Development</option>
+                            <option value="staging">Staging</option>
+                            <option value="production">Production</option>
+                        </select>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-shield-alt"></i>
+                            Security Settings
+                        </label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableVersioning" name="enableVersioning">
+                                <span>Enable Versioning</span>
+                                <small>Dosya sürüm geçmişi tutar</small>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableEncryption" name="enableEncryption" checked>
+                                <span>Enable Encryption</span>
+                                <small>Server-side AES256 encryption</small>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="blockPublicAccess" name="blockPublicAccess" checked>
+                                <span>Block Public Access</span>
+                                <small>Güvenlik için önerilen</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Website Hosting -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableWebsiteHosting" name="enableWebsiteHosting">
+                            <span>
+                                <i class="fas fa-globe"></i>
+                                Static Website Hosting
+                            </span>
+                        </label>
+                    </div>
+
+                    <div id="websiteOptions" class="conditional-section" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="indexDocument">Index Document</label>
+                                <input type="text" id="indexDocument" name="indexDocument" 
+                                       value="index.html" placeholder="index.html">
+                            </div>
+                            <div class="form-group">
+                                <label for="errorDocument">Error Document</label>
+                                <input type="text" id="errorDocument" name="errorDocument" 
+                                       placeholder="error.html">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CORS Configuration -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableCORS" name="enableCORS">
+                            <span>
+                                <i class="fas fa-exchange-alt"></i>
+                                Enable CORS
+                            </span>
+                        </label>
+                    </div>
+
+                    <div id="corsOptions" class="conditional-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="corsOrigins">Allowed Origins</label>
+                            <input type="text" id="corsOrigins" name="corsOrigins" 
+                                   value="*" placeholder="https://mysite.com, *">
+                            <small>Comma separated. Use * for all origins</small>
+                        </div>
+                    </div>
+
+                    <!-- Lifecycle Management -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableLifecycle" name="enableLifecycle">
+                            <span>
+                                <i class="fas fa-recycle"></i>
+                                Lifecycle Management
+                            </span>
+                        </label>
+                    </div>
+
+                    <div id="lifecycleOptions" class="conditional-section" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="lifecycleDays">Delete after (days)</label>
+                                <input type="number" id="lifecycleDays" name="lifecycleDays" 
+                                       value="30" min="1" max="365">
+                            </div>
+                            <div class="form-group">
+                                <label for="noncurrentVersionDays">Delete old versions after (days)</label>
+                                <input type="number" id="noncurrentVersionDays" name="noncurrentVersionDays" 
+                                       value="30" min="1" max="365">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <button type="button" id="s3PreviewBtn" class="btn btn-secondary">
+                            <i class="fas fa-eye"></i>
+                            Önizleme
+                        </button>
+                        <button type="submit" id="s3GenerateBtn" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            Terraform Kodu Oluştur
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- RDS Database Form -->
+            <section id="rdsForm" class="form-section" style="display: none;">
+                <h2><i class="fas fa-database"></i> RDS Database Konfigürasyonu</h2>
+                
+                <form id="rdsTerraformForm" class="terraform-form">
+                    <!-- Basic Configuration -->
+                    <div class="form-group">
+                        <label for="dbIdentifier">
+                            <i class="fas fa-id-card"></i>
+                            DB Instance Identifier
+                        </label>
+                        <input type="text" id="dbIdentifier" name="dbIdentifier" 
+                               placeholder="my-database-instance" required>
+                        <small>Unique identifier for your RDS instance</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="engine">
+                            <i class="fas fa-cogs"></i>
+                            Database Engine
+                        </label>
+                        <select id="engine" name="engine" required>
+                            <option value="mysql" selected>MySQL</option>
+                            <option value="postgres">PostgreSQL</option>
+                            <option value="mariadb">MariaDB</option>
+                            <option value="oracle-ee">Oracle Enterprise</option>
+                            <option value="oracle-se2">Oracle Standard Two</option>
+                            <option value="sqlserver-ee">SQL Server Enterprise</option>
+                            <option value="sqlserver-se">SQL Server Standard</option>
+                            <option value="sqlserver-ex">SQL Server Express</option>
+                            <option value="sqlserver-web">SQL Server Web</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="engineVersion">
+                            <i class="fas fa-code-branch"></i>
+                            Engine Version
+                        </label>
+                        <select id="engineVersion" name="engineVersion" required>
+                            <option value="8.0" selected>8.0 (MySQL)</option>
+                            <option value="5.7">5.7 (MySQL)</option>
+                            <option value="13.7">13.7 (PostgreSQL)</option>
+                            <option value="14.6">14.6 (PostgreSQL)</option>
+                            <option value="15.2">15.2 (PostgreSQL)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="instanceClass">
+                            <i class="fas fa-microchip"></i>
+                            Instance Class
+                        </label>
+                        <select id="instanceClass" name="instanceClass" required>
+                            <option value="db.t3.micro" selected>db.t3.micro (1 vCPU, 1 GB RAM)</option>
+                            <option value="db.t3.small">db.t3.small (2 vCPU, 2 GB RAM)</option>
+                            <option value="db.t3.medium">db.t3.medium (2 vCPU, 4 GB RAM)</option>
+                            <option value="db.t3.large">db.t3.large (2 vCPU, 8 GB RAM)</option>
+                            <option value="db.r5.large">db.r5.large (2 vCPU, 16 GB RAM)</option>
+                            <option value="db.r5.xlarge">db.r5.xlarge (4 vCPU, 32 GB RAM)</option>
+                        </select>
+                    </div>
+
+                    <!-- Storage Configuration -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-hdd"></i>
+                            Storage Configuration
+                        </label>
+                        <div class="input-group">
+                            <div class="input-field">
+                                <label for="allocatedStorage">Allocated Storage (GB)</label>
+                                <input type="number" id="allocatedStorage" name="allocatedStorage" 
+                                       value="20" min="20" max="65536">
+                            </div>
+                            <div class="input-field">
+                                <label for="maxAllocatedStorage">Max Storage (GB)</label>
+                                <input type="number" id="maxAllocatedStorage" name="maxAllocatedStorage" 
+                                       value="100" min="20" max="65536">
+                            </div>
+                            <div class="input-field">
+                                <label for="storageType">Storage Type</label>
+                                <select id="storageType" name="storageType">
+                                    <option value="gp2" selected>General Purpose SSD (gp2)</option>
+                                    <option value="gp3">General Purpose SSD (gp3)</option>
+                                    <option value="io1">Provisioned IOPS SSD (io1)</option>
+                                    <option value="io2">Provisioned IOPS SSD (io2)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Database Settings -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-database"></i>
+                            Database Settings
+                        </label>
+                        <div class="input-group">
+                            <div class="input-field">
+                                <label for="dbName">Database Name</label>
+                                <input type="text" id="dbName" name="dbName" 
+                                       placeholder="teleformdb" required>
+                            </div>
+                            <div class="input-field">
+                                <label for="username">Master Username</label>
+                                <input type="text" id="username" name="username" 
+                                       placeholder="admin" required>
+                            </div>
+                            <div class="input-field">
+                                <label for="password">Master Password</label>
+                                <input type="password" id="password" name="password" 
+                                       placeholder="Enter strong password" required minlength="8">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Availability & Security -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-shield-alt"></i>
+                            Availability & Security
+                        </label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="multiAZ" name="multiAZ">
+                                <span>Multi-AZ Deployment</span>
+                                <small>High availability across multiple zones</small>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="storageEncrypted" name="storageEncrypted" checked>
+                                <span>Storage Encryption</span>
+                                <small>Encrypt database storage</small>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="publiclyAccessible" name="publiclyAccessible">
+                                <span>Publicly Accessible</span>
+                                <small>Allow public internet access</small>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="deletionProtection" name="deletionProtection" checked>
+                                <span>Deletion Protection</span>
+                                <small>Prevent accidental deletion</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Backup & Maintenance -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-clock"></i>
+                            Backup & Maintenance
+                        </label>
+                        <div class="input-group">
+                            <div class="input-field">
+                                <label for="backupRetentionPeriod">Backup Retention (days)</label>
+                                <input type="number" id="backupRetentionPeriod" name="backupRetentionPeriod" 
+                                       value="7" min="0" max="35">
+                            </div>
+                            <div class="input-field">
+                                <label for="backupWindow">Backup Window</label>
+                                <input type="text" id="backupWindow" name="backupWindow" 
+                                       placeholder="03:00-04:00">
+                                <small>Format: HH:MM-HH:MM (UTC)</small>
+                            </div>
+                            <div class="input-field">
+                                <label for="maintenanceWindow">Maintenance Window</label>
+                                <input type="text" id="maintenanceWindow" name="maintenanceWindow" 
+                                       placeholder="sun:04:00-sun:05:00">
+                                <small>Format: ddd:HH:MM-ddd:HH:MM (UTC)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monitoring -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-chart-line"></i>
+                            Monitoring & Performance
+                        </label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="performanceInsightsEnabled" name="performanceInsightsEnabled">
+                                <span>Enable Performance Insights</span>
+                                <small>Advanced database performance monitoring</small>
+                            </label>
+                        </div>
+                        <div class="input-group">
+                            <div class="input-field">
+                                <label for="monitoringInterval">Enhanced Monitoring Interval (seconds)</label>
+                                <select id="monitoringInterval" name="monitoringInterval">
+                                    <option value="0" selected>Disabled</option>
+                                    <option value="1">1 second</option>
+                                    <option value="5">5 seconds</option>
+                                    <option value="10">10 seconds</option>
+                                    <option value="15">15 seconds</option>
+                                    <option value="30">30 seconds</option>
+                                    <option value="60">60 seconds</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network Configuration -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-network-wired"></i>
+                            Network Configuration
+                        </label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="createVPC" name="createVPC" checked>
+                                <span>Create New VPC</span>
+                                <small>Create dedicated VPC for this RDS instance</small>
+                            </label>
+                        </div>
+                        
+                        <div id="existingVpcSection" style="display: none;">
+                            <div class="input-group">
+                                <div class="input-field">
+                                    <label for="vpcId">Existing VPC ID</label>
+                                    <input type="text" id="vpcId" name="vpcId" 
+                                           placeholder="vpc-xxxxxxxx">
+                                </div>
+                                <div class="input-field">
+                                    <label for="subnetIds">Subnet IDs (comma separated)</label>
+                                    <input type="text" id="subnetIds" name="subnetIds" 
+                                           placeholder="subnet-xxx,subnet-yyy">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-tags"></i>
+                            Resource Tags
+                        </label>
+                        <div id="rdsTagsContainer">
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey">
+                                <input type="text" placeholder="Value" name="tagValue">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addRdsTag" class="btn btn-secondary btn-small">
+                            <i class="fas fa-plus"></i> Add Tag
+                        </button>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-code"></i>
+                            RDS Database Kodu Oluştur
                         </button>
                     </div>
                 </form>
