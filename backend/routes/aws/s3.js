@@ -58,8 +58,8 @@ router.post('/', async (req, res) => {
             
             // CORS configuration
             enableCORS: enableCORS || false,
-            corsOrigins: corsOrigins || ['*'],
-            corsOriginsFormatted: (corsOrigins || ['*']).map(origin => `"${origin}"`).join(', '),
+            corsOrigins: corsOrigins && corsOrigins.length > 0 ? corsOrigins : ['*'],
+            corsOriginsFormatted: (corsOrigins && corsOrigins.length > 0 ? corsOrigins : ['*']).map(origin => `"${origin}"`).join(', '),
             
             // Lifecycle management
             enableLifecycle: enableLifecycle || false,

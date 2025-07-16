@@ -86,9 +86,17 @@ class S3Service extends BaseService {
 
         // CORS Origins
         const corsOrigins = [];
-        document.querySelectorAll('#corsOriginsContainer input[name="corsOrigin"]').forEach(input => {
-            if (input.value) corsOrigins.push(input.value);
-        });
+        if (enableCORS) {
+            document.querySelectorAll('#corsOriginsContainer input[name="corsOrigin"]').forEach(input => {
+                if (input.value && input.value.trim()) {
+                    corsOrigins.push(input.value.trim());
+                }
+            });
+        }
+        // If no origins specified, default to *
+        if (enableCORS && corsOrigins.length === 0) {
+            corsOrigins.push('*');
+        }
 
         // Tags
         const tags = {};

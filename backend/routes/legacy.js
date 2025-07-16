@@ -11,10 +11,12 @@ const router = express.Router();
 const ec2Handler = require('./aws/ec2');
 const s3Handler = require('./aws/s3');
 const rdsHandler = require('./aws/rds');
+const iamHandler = require('./aws/iam');
 
 // Legacy endpoint'leri yeni handler'lara forward et
 router.use('/ec2', ec2Handler);
 router.use('/s3', s3Handler);  
 router.use('/rds', rdsHandler);
+router.use('/iam', iamHandler);
 
 module.exports = router; 

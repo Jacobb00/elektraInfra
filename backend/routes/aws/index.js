@@ -11,7 +11,10 @@ const router = express.Router();
 const ec2Routes = require('./ec2');
 const s3Routes = require('./s3');
 const rdsRoutes = require('./rds');
-
+const vpcRoutes = require('./vpc');
+const lambdaRoutes = require('./lambda');
+const dynamodbRoutes = require('./dynamodb');
+const iamRoutes = require('./iam');
 // =====================================================
 // SERVICE ROUTE MOUNTING
 // =====================================================
@@ -30,6 +33,22 @@ router.use('/s3', s3Routes);
 // GET|POST /api/aws/rds/*
 router.use('/rds', rdsRoutes);
 
+// VPC Network Generator
+// GET|POST /api/aws/vpc/*
+router.use('/vpc', vpcRoutes);
+
+// Lambda Function Generator
+// GET|POST /api/aws/lambda/*
+router.use('/lambda', lambdaRoutes);
+
+// DynamoDB Table Generator
+// GET|POST /api/aws/dynamodb/*
+router.use('/dynamodb', dynamodbRoutes);
+
+// IAM Role Generator
+// GET|POST /api/aws/iam/*
+router.use('/iam', iamRoutes);
+
 // =====================================================
 // AWS SERVICES STATUS ENDPOINT
 // =====================================================
@@ -42,18 +61,22 @@ router.get('/status', (req, res) => {
         message: 'AWS Terraform Generator servisleri çalışıyor',
         version: '1.0.0',
         services: {
-            compute: ['EC2 Instance Generator'],
+            compute: ['EC2 Instance Generator', 'Lambda Function Generator'],
             storage: ['S3 Bucket Generator'],
-            database: ['RDS Database Generator'],
-            network: [], // Future: VPC, Security Groups, Load Balancer
-            identity: [], // Future: IAM Roles, Policies
+            database: ['RDS Database Generator', 'DynamoDB Table Generator'],
+            network: ['VPC Network Generator'],
+            identity: ['IAM Role Generator'],
             monitoring: [] // Future: CloudWatch
         },
-        totalServices: 3,
+        totalServices: 7,
         availableEndpoints: [
             'POST /api/aws/ec2 - EC2 Instance generation',
             'POST /api/aws/s3 - S3 Bucket generation',
-            'POST /api/aws/rds - RDS Database generation'
+            'POST /api/aws/rds - RDS Database generation',
+            'POST /api/aws/vpc - VPC Network generation',
+            'POST /api/aws/lambda - Lambda Function generation',
+            'POST /api/aws/dynamodb - DynamoDB Table generation',
+            'POST /api/aws/iam - IAM Role generation'
         ]
     });
 });

@@ -50,6 +50,18 @@ class BaseService {
         } else if (this.serviceName === 's3') {
             previewBtnId = 's3PreviewBtn';
             generateBtnId = 's3GenerateBtn';
+        } else if (this.serviceName === 'vpc') {
+            previewBtnId = 'vpcPreviewBtn';
+            generateBtnId = 'vpcGenerateBtn';
+        } else if (this.serviceName === 'lambda') {
+            previewBtnId = 'lambdaPreviewBtn';
+            generateBtnId = 'lambdaGenerateBtn';
+        } else if (this.serviceName === 'dynamodb') {
+            previewBtnId = 'dynamodbPreviewBtn';
+            generateBtnId = 'dynamodbGenerateBtn';
+        } else if (this.serviceName === 'iam') {
+            previewBtnId = 'iamPreviewBtn';
+            generateBtnId = 'iamGenerateBtn';
         } else if (this.serviceName === 'rds') {
             // RDS için sadece form submit var
             return;

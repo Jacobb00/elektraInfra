@@ -16,11 +16,16 @@ class TeleformApp {
         this.services = {
             ec2: new EC2Service(this.apiService),
             s3: new S3Service(this.apiService),
-            rds: new RDSService(this.apiService)
+            rds: new RDSService(this.apiService),
+            vpc: new VPCService(this.apiService),
+            lambda: new LambdaService(this.apiService),
+            dynamodb: new DynamoDBService(this.apiService),
+            iam: new IAMService(this.apiService)
         };
         
-        // Current active service
+        // Current active service and provider
         this.currentService = 'ec2';
+        this.currentProvider = 'aws';
         
         // Initialize app
         this.init();
@@ -39,7 +44,8 @@ class TeleformApp {
             // Bind global events
             this.bindEvents();
             
-            // Setup initial service (EC2 by default)
+            // Setup initial provider and service
+            this.selectProvider('aws');
             this.selectService('ec2');
             
         } catch (error) {
@@ -89,7 +95,16 @@ class TeleformApp {
      * Bind global events
      */
     bindEvents() {
-        // Service card selection
+        // Provider tab selection
+        const providerTabs = document.querySelectorAll('.provider-tab');
+        providerTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const provider = tab.dataset.provider;
+                this.selectProvider(provider);
+            });
+        });
+
+        // Service card selection (only for active provider)
         const serviceCards = document.querySelectorAll('.service-card:not(.disabled)');
         serviceCards.forEach(card => {
             card.addEventListener('click', () => {
@@ -162,6 +177,68 @@ class TeleformApp {
         Object.values(this.services).forEach(service => {
             service.toggleForm(false);
         });
+    }
+
+    /**
+     * Select and activate provider
+     * @param {string} providerName - Provider name (aws, azure, gcp)
+     */
+    selectProvider(providerName) {
+        console.log(`🌍 Provider seçildi: ${providerName}`);
+        
+        // Update current provider
+        this.currentProvider = providerName;
+        
+        // Update active provider tab
+        this.updateActiveProviderTab(providerName);
+        
+        // Show/hide provider services
+        this.updateProviderServices(providerName);
+        
+        // Hide all forms when switching providers
+        this.hideAllForms();
+        
+        console.log(`✅ ${providerName} provider aktif edildi`);
+    }
+
+    /**
+     * Update active provider tab
+     * @param {string} providerName - Provider name
+     */
+    updateActiveProviderTab(providerName) {
+        // Remove active from all provider tabs
+        document.querySelectorAll('.provider-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Add active to selected provider tab
+        const selectedTab = document.querySelector(`[data-provider="${providerName}"]`);
+        if (selectedTab) {
+            selectedTab.classList.add('active');
+        }
+    }
+
+    /**
+     * Update provider services visibility
+     * @param {string} providerName - Provider name
+     */
+    updateProviderServices(providerName) {
+        // Hide all provider services
+        document.querySelectorAll('.provider-services').forEach(services => {
+            services.classList.remove('active');
+        });
+
+        // Show selected provider services
+        const selectedServices = document.getElementById(`${providerName}-services`);
+        if (selectedServices) {
+            selectedServices.classList.add('active');
+        }
+
+        // For AWS, also update service card events since they're available
+        if (providerName === 'aws') {
+            // Re-select first available service for AWS
+            this.selectService('ec2');
+        }
     }
 
     /**

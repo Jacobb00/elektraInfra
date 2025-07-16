@@ -44,6 +44,26 @@
                         <h3>S3 Bucket</h3>
                         <p>Cloud storage oluştur</p>
                     </div>
+                    <div class="service-card" data-service="vpc">
+                        <i class="fas fa-network-wired"></i>
+                        <h3>VPC Network</h3>
+                        <p>Virtual private cloud oluştur</p>
+                    </div>
+                    <div class="service-card" data-service="lambda">
+                        <i class="fas fa-bolt"></i>
+                        <h3>Lambda Function</h3>
+                        <p>Serverless function oluştur</p>
+                    </div>
+                    <div class="service-card" data-service="dynamodb">
+                        <i class="fas fa-table"></i>
+                        <h3>DynamoDB Table</h3>
+                        <p>NoSQL database oluştur</p>
+                    </div>
+                    <div class="service-card" data-service="iam">
+                        <i class="fas fa-user-shield"></i>
+                        <h3>IAM Role</h3>
+                        <p>Identity & access management</p>
+                    </div>
                 </div>
             </section>
 
@@ -286,14 +306,23 @@
                         </label>
                     </div>
 
-                    <div id="corsOptions" class="conditional-section" style="display: none;">
-                        <div class="form-group">
-                            <label for="corsOrigins">Allowed Origins</label>
-                            <input type="text" id="corsOrigins" name="corsOrigins" 
-                                   value="*" placeholder="https://mysite.com, *">
-                            <small>Comma separated. Use * for all origins</small>
+                                <div id="corsOptions" class="conditional-section" style="display: none;">
+                <div class="form-group">
+                    <label for="corsOrigins">Allowed Origins</label>
+                    <div id="corsOriginsContainer">
+                        <div class="cors-origin-input">
+                            <input type="text" name="corsOrigin" value="*" placeholder="https://example.com or *">
+                            <button type="button" class="btn-remove-origin">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     </div>
+                    <button type="button" id="addCorsOrigin" class="btn btn-secondary btn-small">
+                        <i class="fas fa-plus"></i> Add Origin
+                    </button>
+                    <small>Use * for all origins</small>
+                </div>
+            </div>
 
                     <!-- Lifecycle Management -->
                     <div class="form-group">
@@ -319,6 +348,33 @@
                                        value="30" min="1" max="365">
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-tags"></i>
+                            Resource Tags
+                        </label>
+                        <div id="s3TagsContainer">
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey" value="Name">
+                                <input type="text" placeholder="Value" name="tagValue" value="teleform-bucket">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey" value="Environment">
+                                <input type="text" placeholder="Value" name="tagValue" value="development">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addS3Tag" class="btn btn-secondary btn-small">
+                            <i class="fas fa-plus"></i> Add Tag
+                        </button>
                     </div>
 
                     <!-- Action Buttons -->
@@ -598,6 +654,855 @@
                 </form>
             </section>
 
+            <!-- VPC Network Form -->
+            <section id="vpcForm" class="form-section" style="display: none;">
+                <h2><i class="fas fa-network-wired"></i> VPC Network Konfigürasyonu</h2>
+                
+                <form id="vpcTerraformForm" class="terraform-form">
+                    <!-- Region Selection -->
+                    <div class="form-group">
+                        <label for="vpcRegion">
+                            <i class="fas fa-globe-americas"></i>
+                            AWS Region
+                        </label>
+                        <select id="vpcRegion" name="vpcRegion" required>
+                            <option value="us-east-1" selected>US East (N. Virginia) - us-east-1</option>
+                            <option value="us-west-2">US West (Oregon) - us-west-2</option>
+                            <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+                            <option value="eu-central-1">Europe (Frankfurt) - eu-central-1</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
+                            <option value="ap-northeast-1">Asia Pacific (Tokyo) - ap-northeast-1</option>
+                        </select>
+                    </div>
+
+                    <!-- Basic Configuration -->
+                    <div class="form-group">
+                        <label for="vpcName">
+                            <i class="fas fa-tag"></i>
+                            VPC Name
+                        </label>
+                        <input type="text" id="vpcName" name="vpcName" 
+                               placeholder="teleform-vpc" value="teleform-vpc" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vpcCidr">
+                            <i class="fas fa-project-diagram"></i>
+                            VPC CIDR Block
+                        </label>
+                        <input type="text" id="vpcCidr" name="vpcCidr" 
+                               placeholder="10.0.0.0/16" value="10.0.0.0/16" required>
+                        <small>Örn: 10.0.0.0/16 (65,536 IPs) veya 172.31.0.0/16</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="availabilityZones">
+                            <i class="fas fa-sitemap"></i>
+                            Availability Zones Sayısı
+                        </label>
+                        <select id="availabilityZones" name="availabilityZones" required>
+                            <option value="1">1 AZ (Development)</option>
+                            <option value="2" selected>2 AZ (High Availability)</option>
+                            <option value="3">3 AZ (Maximum Availability)</option>
+                        </select>
+                        <small>Her AZ'de public ve private subnet oluşturulacak</small>
+                    </div>
+
+                    <!-- DNS Settings -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-globe"></i>
+                            DNS Settings
+                        </label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableDnsHostnames" name="enableDnsHostnames" checked>
+                                <span>Enable DNS Hostnames</span>
+                                <small>EC2 instance'lar için DNS hostname desteği</small>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableDnsSupport" name="enableDnsSupport" checked>
+                                <span>Enable DNS Support</span>
+                                <small>VPC içinde DNS çözümleme desteği</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- NAT Gateway Settings -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableNatGateway" name="enableNatGateway" checked>
+                            <span>
+                                <i class="fas fa-shield-alt"></i>
+                                Enable NAT Gateway
+                            </span>
+                            <small>Private subnet'lerin internet erişimi için</small>
+                        </label>
+                    </div>
+
+                    <div id="natGatewayOptions" class="conditional-section">
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="singleNatGateway" name="singleNatGateway">
+                                <span>Single NAT Gateway</span>
+                                <small>Cost optimization - Tüm AZ'ler için tek NAT Gateway</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Additional Subnets -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-layer-group"></i>
+                            Additional Subnet Types
+                        </label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableDatabaseSubnets" name="enableDatabaseSubnets">
+                                <span>Database Subnets</span>
+                                <small>RDS için isolated database subnet'leri</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Features -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-cogs"></i>
+                            Advanced Features
+                        </label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableVpnGateway" name="enableVpnGateway">
+                                <span>VPN Gateway</span>
+                                <small>Site-to-site VPN bağlantısı için</small>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableFlowLogs" name="enableFlowLogs">
+                                <span>VPC Flow Logs</span>
+                                <small>Network traffic monitoring</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="flowLogsOptions" class="conditional-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="flowLogsRetention">Flow Logs Retention (days)</label>
+                            <input type="number" id="flowLogsRetention" name="flowLogsRetention" 
+                                   value="7" min="1" max="365">
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-tags"></i>
+                            Resource Tags
+                        </label>
+                        <div id="vpcTagsContainer">
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey" value="Name">
+                                <input type="text" placeholder="Value" name="tagValue" value="teleform-vpc">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey" value="Environment">
+                                <input type="text" placeholder="Value" name="tagValue" value="development">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addVpcTag" class="btn btn-secondary btn-small">
+                            <i class="fas fa-plus"></i> Add Tag
+                        </button>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <button type="button" id="vpcPreviewBtn" class="btn btn-secondary">
+                            <i class="fas fa-eye"></i>
+                            Önizleme
+                        </button>
+                        <button type="submit" id="vpcGenerateBtn" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            VPC Network Kodu Oluştur
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Lambda Function Form -->
+            <section id="lambdaForm" class="form-section" style="display: none;">
+                <h2><i class="fas fa-bolt"></i> Lambda Function Konfigürasyonu</h2>
+                
+                <form id="lambdaTerraformForm" class="terraform-form">
+                    <!-- Region Selection -->
+                    <div class="form-group">
+                        <label for="lambdaRegion">
+                            <i class="fas fa-globe-americas"></i>
+                            AWS Region
+                        </label>
+                        <select id="lambdaRegion" name="lambdaRegion" required>
+                            <option value="us-east-1" selected>US East (N. Virginia) - us-east-1</option>
+                            <option value="us-west-2">US West (Oregon) - us-west-2</option>
+                            <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+                            <option value="eu-central-1">Europe (Frankfurt) - eu-central-1</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
+                            <option value="ap-northeast-1">Asia Pacific (Tokyo) - ap-northeast-1</option>
+                        </select>
+                    </div>
+
+                    <!-- Basic Configuration -->
+                    <div class="form-group">
+                        <label for="functionName">
+                            <i class="fas fa-tag"></i>
+                            Function Name
+                        </label>
+                        <input type="text" id="functionName" name="functionName" 
+                               placeholder="teleform-lambda" value="teleform-lambda" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="functionDescription">
+                            <i class="fas fa-info-circle"></i>
+                            Description
+                        </label>
+                        <input type="text" id="functionDescription" name="functionDescription" 
+                               placeholder="Lambda function created by Teleform" 
+                               value="Lambda function created by Teleform">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="runtime">Runtime</label>
+                            <select id="runtime" name="runtime" required>
+                                <option value="python3.9" selected>Python 3.9</option>
+                                <option value="python3.8">Python 3.8</option>
+                                <option value="nodejs18.x">Node.js 18.x</option>
+                                <option value="nodejs16.x">Node.js 16.x</option>
+                                <option value="java11">Java 11</option>
+                                <option value="java8">Java 8</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="handler">Handler</label>
+                            <input type="text" id="handler" name="handler" 
+                                   value="index.handler" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="memorySize">Memory (MB)</label>
+                            <input type="number" id="memorySize" name="memorySize" 
+                                   value="128" min="128" max="10240" step="64">
+                        </div>
+                        <div class="form-group">
+                            <label for="timeout">Timeout (seconds)</label>
+                            <input type="number" id="timeout" name="timeout" 
+                                   value="3" min="1" max="900">
+                        </div>
+                        <div class="form-group">
+                            <label for="architecture">Architecture</label>
+                            <select id="architecture" name="architecture">
+                                <option value="x86_64" selected>x86_64</option>
+                                <option value="arm64">arm64</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Function Code -->
+                    <div class="form-group">
+                        <label for="functionCode">
+                            <i class="fas fa-code"></i>
+                            Function Code
+                        </label>
+                        <textarea id="functionCode" name="functionCode" rows="8" 
+                                  placeholder="Function code will be auto-generated based on runtime"></textarea>
+                        <small>Default code will be generated based on selected runtime</small>
+                    </div>
+
+                    <!-- Environment Variables -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-cog"></i>
+                            Environment Variables
+                        </label>
+                        <div id="envVarsContainer">
+                            <div class="env-var-input">
+                                <input type="text" placeholder="Key" name="envKey">
+                                <input type="text" placeholder="Value" name="envValue">
+                                <button type="button" class="btn-remove-env">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addEnvVar" class="btn btn-secondary btn-small">
+                            <i class="fas fa-plus"></i> Add Environment Variable
+                        </button>
+                    </div>
+
+                    <!-- API Gateway -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableApiGateway" name="enableApiGateway">
+                            <span>
+                                <i class="fas fa-globe"></i>
+                                Enable API Gateway
+                            </span>
+                            <small>HTTP API trigger for Lambda function</small>
+                        </label>
+                    </div>
+
+                    <div id="apiGatewayOptions" class="conditional-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="apiGatewayStage">API Gateway Stage</label>
+                            <input type="text" id="apiGatewayStage" name="apiGatewayStage" 
+                                   value="prod" placeholder="prod">
+                        </div>
+                    </div>
+
+                    <!-- EventBridge Schedule -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableEventBridge" name="enableEventBridge">
+                            <span>
+                                <i class="fas fa-clock"></i>
+                                Enable EventBridge Schedule
+                            </span>
+                            <small>Schedule Lambda execution</small>
+                        </label>
+                    </div>
+
+                    <div id="eventBridgeOptions" class="conditional-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="scheduleExpression">Schedule Expression</label>
+                            <input type="text" id="scheduleExpression" name="scheduleExpression" 
+                                   value="rate(1 hour)" placeholder="rate(1 hour) or cron(0 9 * * ? *)">
+                            <small>Examples: rate(5 minutes), cron(0 9 * * ? *)</small>
+                        </div>
+                    </div>
+
+                    <!-- Permissions -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-shield-alt"></i>
+                            AWS Service Permissions
+                        </label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableDynamoDB" name="enableDynamoDB">
+                                <span>DynamoDB Access</span>
+                                <small>Read/Write access to DynamoDB tables</small>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableS3" name="enableS3">
+                                <span>S3 Access</span>
+                                <small>Read/Write access to S3 buckets</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- CloudWatch Logs -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableCloudWatchLogs" name="enableCloudWatchLogs" checked>
+                            <span>
+                                <i class="fas fa-chart-line"></i>
+                                Enable CloudWatch Logs
+                            </span>
+                        </label>
+                    </div>
+
+                    <div id="cloudWatchLogsOptions" class="conditional-section">
+                        <div class="form-group">
+                            <label for="logRetentionDays">Log Retention (days)</label>
+                            <input type="number" id="logRetentionDays" name="logRetentionDays" 
+                                   value="7" min="1" max="365">
+                        </div>
+                    </div>
+
+                    <!-- Advanced Features -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-cogs"></i>
+                            Advanced Features
+                        </label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableDeadLetterQueue" name="enableDeadLetterQueue">
+                                <span>Dead Letter Queue</span>
+                                <small>SQS queue for failed executions</small>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableTracing" name="enableTracing">
+                                <span>X-Ray Tracing</span>
+                                <small>Enable AWS X-Ray tracing</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-tags"></i>
+                            Resource Tags
+                        </label>
+                        <div id="lambdaTagsContainer">
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey" value="Name">
+                                <input type="text" placeholder="Value" name="tagValue" value="teleform-lambda">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey" value="Environment">
+                                <input type="text" placeholder="Value" name="tagValue" value="development">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addLambdaTag" class="btn btn-secondary btn-small">
+                            <i class="fas fa-plus"></i> Add Tag
+                        </button>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <button type="button" id="lambdaPreviewBtn" class="btn btn-secondary">
+                            <i class="fas fa-eye"></i>
+                            Önizleme
+                        </button>
+                        <button type="submit" id="lambdaGenerateBtn" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            Lambda Function Kodu Oluştur
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- DynamoDB Table Form -->
+            <section id="dynamodbForm" class="form-section" style="display: none;">
+                <h2><i class="fas fa-table"></i> DynamoDB Table Konfigürasyonu</h2>
+                
+                <form id="dynamodbTerraformForm" class="terraform-form">
+                    <!-- Region Selection -->
+                    <div class="form-group">
+                        <label for="dynamodbRegion">
+                            <i class="fas fa-globe-americas"></i>
+                            AWS Region
+                        </label>
+                        <select id="dynamodbRegion" name="dynamodbRegion" required>
+                            <option value="us-east-1" selected>US East (N. Virginia) - us-east-1</option>
+                            <option value="us-west-2">US West (Oregon) - us-west-2</option>
+                            <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+                            <option value="eu-central-1">Europe (Frankfurt) - eu-central-1</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
+                            <option value="ap-northeast-1">Asia Pacific (Tokyo) - ap-northeast-1</option>
+                        </select>
+                    </div>
+
+                    <!-- Basic Configuration -->
+                    <div class="form-group">
+                        <label for="tableName">
+                            <i class="fas fa-tag"></i>
+                            Table Name
+                        </label>
+                        <input type="text" id="tableName" name="tableName" 
+                               placeholder="teleform-table" value="teleform-table" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="billingMode">
+                            <i class="fas fa-dollar-sign"></i>
+                            Billing Mode
+                        </label>
+                        <select id="billingMode" name="billingMode" required>
+                            <option value="PAY_PER_REQUEST" selected>On-Demand (Pay per request)</option>
+                            <option value="PROVISIONED">Provisioned (Fixed capacity)</option>
+                        </select>
+                        <small>On-demand recommended for unpredictable workloads</small>
+                    </div>
+
+                    <div id="provisionedOptions" class="conditional-section" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="readCapacity">Read Capacity Units</label>
+                                <input type="number" id="readCapacity" name="readCapacity" 
+                                       value="5" min="1" max="1000">
+                            </div>
+                            <div class="form-group">
+                                <label for="writeCapacity">Write Capacity Units</label>
+                                <input type="number" id="writeCapacity" name="writeCapacity" 
+                                       value="5" min="1" max="1000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Primary Key -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-key"></i>
+                            Primary Key
+                        </label>
+                        <div class="form-row">
+                            <input type="text" id="hashKey" name="hashKey" 
+                                   placeholder="Hash Key Name" value="id" required>
+                            <select id="hashKeyType" name="hashKeyType">
+                                <option value="S" selected>String</option>
+                                <option value="N">Number</option>
+                                <option value="B">Binary</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Range Key (Optional)</label>
+                        <div class="form-row">
+                            <input type="text" id="rangeKey" name="rangeKey" 
+                                   placeholder="Range Key Name (Optional)">
+                            <select id="rangeKeyType" name="rangeKeyType">
+                                <option value="S" selected>String</option>
+                                <option value="N">Number</option>
+                                <option value="B">Binary</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Features -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-shield-alt"></i>
+                            Security & Backup
+                        </label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enableEncryption" name="enableEncryption" checked>
+                                <span>Server-side Encryption</span>
+                                <small>Encrypt data at rest</small>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enablePointInTimeRecovery" name="enablePointInTimeRecovery">
+                                <span>Point-in-time Recovery</span>
+                                <small>Continuous backups for 35 days</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- TTL -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableTtl" name="enableTtl">
+                            <span>
+                                <i class="fas fa-clock"></i>
+                                Time to Live (TTL)
+                            </span>
+                            <small>Automatically delete expired items</small>
+                        </label>
+                    </div>
+
+                    <div id="ttlOptions" class="conditional-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="ttlAttributeName">TTL Attribute Name</label>
+                            <input type="text" id="ttlAttributeName" name="ttlAttributeName" 
+                                   value="ttl" placeholder="ttl">
+                        </div>
+                    </div>
+
+                    <!-- Streams -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableStreams" name="enableStreams">
+                            <span>
+                                <i class="fas fa-stream"></i>
+                                DynamoDB Streams
+                            </span>
+                            <small>Capture data modification events</small>
+                        </label>
+                    </div>
+
+                    <div id="streamsOptions" class="conditional-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="streamViewType">Stream View Type</label>
+                            <select id="streamViewType" name="streamViewType">
+                                <option value="NEW_AND_OLD_IMAGES" selected>New and old images</option>
+                                <option value="NEW_IMAGE">New image only</option>
+                                <option value="OLD_IMAGE">Old image only</option>
+                                <option value="KEYS_ONLY">Keys only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Auto Scaling -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableAutoScaling" name="enableAutoScaling">
+                            <span>
+                                <i class="fas fa-expand-arrows-alt"></i>
+                                Auto Scaling (Provisioned mode only)
+                            </span>
+                        </label>
+                    </div>
+
+                    <div id="autoScalingOptions" class="conditional-section" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="autoScalingMinReadCapacity">Min Read Capacity</label>
+                                <input type="number" id="autoScalingMinReadCapacity" name="autoScalingMinReadCapacity" 
+                                       value="1" min="1" max="1000">
+                            </div>
+                            <div class="form-group">
+                                <label for="autoScalingMaxReadCapacity">Max Read Capacity</label>
+                                <input type="number" id="autoScalingMaxReadCapacity" name="autoScalingMaxReadCapacity" 
+                                       value="10" min="1" max="1000">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="autoScalingMinWriteCapacity">Min Write Capacity</label>
+                                <input type="number" id="autoScalingMinWriteCapacity" name="autoScalingMinWriteCapacity" 
+                                       value="1" min="1" max="1000">
+                            </div>
+                            <div class="form-group">
+                                <label for="autoScalingMaxWriteCapacity">Max Write Capacity</label>
+                                <input type="number" id="autoScalingMaxWriteCapacity" name="autoScalingMaxWriteCapacity" 
+                                       value="10" min="1" max="1000">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="autoScalingTargetValue">Target Utilization (%)</label>
+                            <input type="number" id="autoScalingTargetValue" name="autoScalingTargetValue" 
+                                   value="70" min="10" max="90">
+                        </div>
+                    </div>
+
+                    <!-- Backup -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableBackup" name="enableBackup">
+                            <span>
+                                <i class="fas fa-save"></i>
+                                AWS Backup
+                            </span>
+                            <small>Scheduled backup with AWS Backup service</small>
+                        </label>
+                    </div>
+
+                    <div id="backupOptions" class="conditional-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="backupRetentionDays">Backup Retention (days)</label>
+                            <input type="number" id="backupRetentionDays" name="backupRetentionDays" 
+                                   value="7" min="1" max="365">
+                        </div>
+                    </div>
+
+                    <!-- Global Secondary Indexes -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-list"></i>
+                            Global Secondary Indexes (GSI)
+                        </label>
+                        <div id="gsiContainer">
+                            <!-- GSI inputs will be added dynamically -->
+                        </div>
+                        <button type="button" id="addGSI" class="btn btn-secondary btn-small">
+                            <i class="fas fa-plus"></i> Add GSI
+                        </button>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-tags"></i>
+                            Resource Tags
+                        </label>
+                        <div id="dynamodbTagsContainer">
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey" value="Name">
+                                <input type="text" placeholder="Value" name="tagValue" value="teleform-table">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey" value="Environment">
+                                <input type="text" placeholder="Value" name="tagValue" value="development">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addDynamoDBTag" class="btn btn-secondary btn-small">
+                            <i class="fas fa-plus"></i> Add Tag
+                        </button>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <button type="button" id="dynamodbPreviewBtn" class="btn btn-secondary">
+                            <i class="fas fa-eye"></i>
+                            Önizleme
+                        </button>
+                        <button type="submit" id="dynamodbGenerateBtn" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            DynamoDB Table Kodu Oluştur
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- IAM Role Form -->
+            <section id="iamForm" class="form-section" style="display: none;">
+                <h2><i class="fas fa-user-shield"></i> IAM Role Konfigürasyonu</h2>
+                
+                <form id="iamTerraformForm" class="terraform-form">
+                    <!-- Region Selection -->
+                    <div class="form-group">
+                        <label for="iamRegion">
+                            <i class="fas fa-globe-americas"></i>
+                            AWS Region
+                        </label>
+                        <select id="iamRegion" name="iamRegion" required>
+                            <option value="us-east-1" selected>US East (N. Virginia) - us-east-1</option>
+                            <option value="us-west-2">US West (Oregon) - us-west-2</option>
+                            <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+                            <option value="eu-central-1">Europe (Frankfurt) - eu-central-1</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
+                            <option value="ap-northeast-1">Asia Pacific (Tokyo) - ap-northeast-1</option>
+                        </select>
+                    </div>
+
+                    <!-- Basic Configuration -->
+                    <div class="form-group">
+                        <label for="roleName">
+                            <i class="fas fa-tag"></i>
+                            Role Name
+                        </label>
+                        <input type="text" id="roleName" name="roleName" 
+                               placeholder="teleform-role" value="teleform-role" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="roleDescription">
+                            <i class="fas fa-info-circle"></i>
+                            Role Description
+                        </label>
+                        <input type="text" id="roleDescription" name="roleDescription" 
+                               placeholder="IAM role created by Teleform" 
+                               value="IAM role created by Teleform">
+                    </div>
+
+                    <!-- Service Principal -->
+                    <div class="form-group">
+                        <label for="servicePrincipal">
+                            <i class="fas fa-cog"></i>
+                            Service Principal
+                        </label>
+                        <select id="servicePrincipal" name="servicePrincipal" required>
+                            <option value="ec2.amazonaws.com" selected>EC2 Service</option>
+                            <option value="lambda.amazonaws.com">Lambda Service</option>
+                            <option value="rds.amazonaws.com">RDS Service</option>
+                            <option value="s3.amazonaws.com">S3 Service</option>
+                            <option value="ecs-tasks.amazonaws.com">ECS Tasks</option>
+                            <option value="codebuild.amazonaws.com">CodeBuild</option>
+                            <option value="codepipeline.amazonaws.com">CodePipeline</option>
+                            <option value="cloudformation.amazonaws.com">CloudFormation</option>
+                            <option value="apigateway.amazonaws.com">API Gateway</option>
+                            <option value="events.amazonaws.com">EventBridge</option>
+                        </select>
+                        <small>Which AWS service will use this role</small>
+                    </div>
+
+                    <!-- Instance Profile -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="createInstanceProfile" name="createInstanceProfile" checked>
+                            <span>
+                                <i class="fas fa-server"></i>
+                                Create Instance Profile
+                            </span>
+                            <small>Required for EC2 instances</small>
+                        </label>
+                    </div>
+
+                    <!-- AWS Managed Policies -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-shield-alt"></i>
+                            AWS Managed Policies
+                        </label>
+                        <div id="managedPoliciesContainer">
+                            <div class="policy-input">
+                                <input type="text" placeholder="arn:aws:iam::aws:policy/PolicyName" name="policyArn" 
+                                       value="arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess">
+                                <button type="button" class="btn-remove-policy">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addManagedPolicy" class="btn btn-secondary btn-small">
+                            <i class="fas fa-plus"></i> Add Managed Policy
+                        </button>
+                        
+                        <!-- Common Policy Examples -->
+                        <div class="policy-examples">
+                            <small><strong>Common Policies:</strong></small>
+                            <ul style="font-size: 0.85em; margin: 10px 0;">
+                                <li><code>arn:aws:iam::aws:policy/AmazonS3FullAccess</code> - Full S3 access</li>
+                                <li><code>arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess</code> - Full DynamoDB access</li>
+                                <li><code>arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy</code> - CloudWatch agent</li>
+                                <li><code>arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore</code> - Systems Manager</li>
+                                <li><code>arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole</code> - Lambda basic</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-tags"></i>
+                            Resource Tags
+                        </label>
+                        <div id="iamTagsContainer">
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey" value="Name">
+                                <input type="text" placeholder="Value" name="tagValue" value="teleform-role">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="tag-input">
+                                <input type="text" placeholder="Key" name="tagKey" value="Environment">
+                                <input type="text" placeholder="Value" name="tagValue" value="development">
+                                <button type="button" class="btn-remove-tag">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addIAMTag" class="btn btn-secondary btn-small">
+                            <i class="fas fa-plus"></i> Add Tag
+                        </button>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <button type="button" id="iamPreviewBtn" class="btn btn-secondary">
+                            <i class="fas fa-eye"></i>
+                            Önizleme
+                        </button>
+                        <button type="submit" id="iamGenerateBtn" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            IAM Role Kodu Oluştur
+                        </button>
+                    </div>
+                </form>
+            </section>
+
             <!-- Output Section -->
             <section id="outputSection" class="output-section" style="display: none;">
                 <h2><i class="fas fa-file-code"></i> Oluşturulan Terraform Kodu</h2>
@@ -639,6 +1544,10 @@
     <script src="js/services/aws/EC2Service.js"></script>
     <script src="js/services/aws/S3Service.js"></script>
     <script src="js/services/aws/RDSService.js"></script>
+    <script src="js/services/aws/VPCService.js"></script>
+    <script src="js/services/aws/LambdaService.js"></script>
+    <script src="js/services/aws/DynamoDBService.js"></script>
+    <script src="js/services/aws/IAMService.js"></script>
     
     <!-- Main App -->
     <script src="js/app.js"></script>
