@@ -66,18 +66,18 @@ router.post('/', async (req, res) => {
             lifecycleDays: lifecycleDays || 30,
             noncurrentVersionDays: noncurrentVersionDays || 30,
             
-            // Tags object
-            tags: tags || {
+            // Tags - Convert to array format for Mustache template
+            tags: Object.entries(tags || {
                 Name: bucketName || 'teleform-bucket',
                 Environment: bucketEnvironment || 'development'
-            },
+            }).map(([key, value]) => ({ key, value })),
             
             // Timestamp for template comment
             timestamp: new Date().toISOString()
         };
 
         // Mustache engine ile template'i render et
-        const terraformCode = Mustache.render(template, templateData);
+        const terraformCode = Mustache.render(template, templateData, {}, { escape: function(text) { return text; } });
 
         // Unique dosya adı oluştur
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');

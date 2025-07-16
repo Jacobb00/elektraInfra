@@ -95,8 +95,8 @@ router.post('/', async (req, res) => {
             
             // Backup ve maintenance
             backup_retention_period: backupRetentionPeriod || 7,
-            backup_window: backupWindow || '',
-            maintenance_window: maintenanceWindow || '',
+            backup_window: backupWindow || null,
+            maintenance_window: maintenanceWindow || null,
             
             // Monitoring
             performance_insights_enabled: performanceInsightsEnabled || false,
@@ -105,9 +105,9 @@ router.post('/', async (req, res) => {
             
             // Network configuration
             create_vpc: createVPC || true,
-            vpc_id: vpcId || '',
+            vpc_id: vpcId || null,
             subnet_ids: subnetIds || [],
-            subnet_ids_formatted: subnetIds && subnetIds.length > 0 ? subnetIds.map(id => `"${id}"`).join(', ') : '',
+            subnet_ids_formatted: subnetIds && subnetIds.length > 0 ? subnetIds.map(id => `"${id}"`).join(', ') : null,
             
             // Security group rules
             security_group_rules: (securityGroupRules || [{
@@ -120,26 +120,26 @@ router.post('/', async (req, res) => {
             
             // Parameter group
             create_parameter_group: createParameterGroup || false,
-            parameter_group_family: parameterGroupFamily || '',
+            parameter_group_family: parameterGroupFamily || null,
             parameters: parameters || [],
             
             // Option group
             create_option_group: createOptionGroup || false,
-            major_engine_version: majorEngineVersion || '',
+            major_engine_version: majorEngineVersion || null,
             options: options || [],
             
-            // Tags
-            tags: tags || {
+            // Tags - Convert to array format for Mustache template
+            tags: Object.entries(tags || {
                 Name: dbIdentifier || 'teleform-db',
                 Environment: 'development'
-            },
+            }).map(([key, value]) => ({ key, value })),
             
             // Timestamp for template comment
             timestamp: new Date().toISOString()
         };
 
-        // Mustache engine ile template'i render et
-        const terraformCode = Mustache.render(template, templateData);
+        // Mustache engine ile template'i render et (HTML escaping kapalı)
+        const terraformCode = Mustache.render(template, templateData, {}, { escape: function(text) { return text; } });
 
         // Unique dosya adı oluştur
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');

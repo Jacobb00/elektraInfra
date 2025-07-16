@@ -90,7 +90,7 @@ router.post('/', async (req, res) => {
         });
 
         // Mustache engine ile template'i render et
-        const terraformCode = Mustache.render(template, templateData);
+        const terraformCode = Mustache.render(template, templateData, {}, { escape: function(text) { return text; } });
 
         // Unique dosya adı oluştur
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');

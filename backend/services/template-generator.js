@@ -34,12 +34,12 @@ class TemplateGenerator {
             // Template dosyasını oku
             const template = await fs.readFile(templatePath, 'utf8');
             
-            // Template'i render et
+            // Template'i render et (HTML escaping kapalı)
             const renderedCode = Mustache.render(template, {
                 ...templateData,
                 timestamp: new Date().toISOString(),
                 provider: this.provider
-            });
+            }, {}, { escape: function(text) { return text; } });
             
             // Dosya adını oluştur
             const outputFileName = fileName || this.generateFileName(serviceName);

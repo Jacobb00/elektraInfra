@@ -155,7 +155,7 @@ router.post('/', async (req, res) => {
         };
 
         // Template'i render et
-        const terraformCode = Mustache.render(template, templateData);
+        const terraformCode = Mustache.render(template, templateData, {}, { escape: function(text) { return text; } });
 
         // Dosya adı oluştur
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');

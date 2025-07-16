@@ -239,7 +239,9 @@ resource "aws_security_group" "rds_sg" {
   vpc_id      = aws_vpc.rds_vpc.id
   {{/create_vpc}}
   {{^create_vpc}}
+  {{#vpc_id}}
   vpc_id      = "{{vpc_id}}"
+  {{/vpc_id}}
   {{/create_vpc}}
 
   {{#security_group_rules}}

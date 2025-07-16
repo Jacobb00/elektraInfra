@@ -83,7 +83,7 @@ router.post('/', async (req, res) => {
         const templateContent = await fs.readFile(templatePath, 'utf8');
         
         // Mustache ile render et
-        const terraformCode = Mustache.render(templateContent, templateData);
+        const terraformCode = Mustache.render(templateContent, templateData, {}, { escape: function(text) { return text; } });
         
         console.log('✅ IAM Terraform code generated successfully');
 
