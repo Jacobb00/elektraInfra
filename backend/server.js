@@ -136,10 +136,76 @@ app.get('/api/azure/resourceGroups/:subscriptionId', async (req, res) => {
 
 // Terraformer supported resources mapping
 const terraformerResources = {
-    'Microsoft.Compute/virtualMachines': 'virtual_machine',
-    'Microsoft.Network/virtualNetworks': 'network',
+    // Analysis Services
+    'Microsoft.AnalysisServices/servers': 'analysis',
+    
+    // App Service
+    'Microsoft.Web/sites': 'app_service',
+    'Microsoft.Web/serverfarms': 'app_service',
+    
+    // Application Gateway
+    'Microsoft.Network/applicationGateways': 'application_gateway',
+    
+    // Container Services
+    'Microsoft.ContainerInstance/containerGroups': 'container',
+    'Microsoft.ContainerRegistry/registries': 'container',
+    
+    // Cosmos DB
+    'Microsoft.DocumentDB/databaseAccounts': 'cosmosdb',
+    
+    // Data Factory
+    'Microsoft.DataFactory/factories': 'data_factory',
+    
+    // Databases
+    'Microsoft.DBforMariaDB/servers': 'database',
+    'Microsoft.DBforMySQL/servers': 'database',
+    'Microsoft.DBforPostgreSQL/servers': 'database',
+    'Microsoft.Sql/servers': 'database',
+    'Microsoft.Sql/databases': 'database',
+    
+    // Databricks
+    'Microsoft.Databricks/workspaces': 'databricks',
+    
+    // Disks
+    'Microsoft.Compute/disks': 'disk',
+    
+    // DNS
+    'Microsoft.Network/dnsZones': 'dns',
+    
+    // Event Hub
+    'Microsoft.EventHub/namespaces': 'eventhub',
+    
+    // Key Vault
+    'Microsoft.KeyVault/vaults': 'key_vault',
+    
+    // Load Balancer
+    'Microsoft.Network/loadBalancers': 'load_balancer',
+    
+    // Network Security Groups
+    'Microsoft.Network/networkSecurityGroups': 'network_security_group',
+    
+    // Public IP
+    'Microsoft.Network/publicIPAddresses': 'public_ip',
+    
+    // Resource Groups
+    'Microsoft.Resources/resourceGroups': 'resource_group',
+    
+    // Storage
     'Microsoft.Storage/storageAccounts': 'storage',
-    // Add more mappings as needed
+    
+    // Virtual Machines
+    'Microsoft.Compute/virtualMachines': 'virtual_machine',
+    'Microsoft.Compute/virtualMachineScaleSets': 'virtual_machine_scale_set',
+    
+    // Virtual Networks
+    'Microsoft.Network/virtualNetworks': 'virtual_network',
+    'Microsoft.Network/virtualNetworks/subnets': 'subnet',
+    'Microsoft.Network/networkInterfaces': 'network_interface',
+    'Microsoft.Network/virtualNetworkGateways': 'virtual_network_gateway',
+    
+    // Web Apps
+    'Microsoft.Web/sites': 'app_service',
+    'Microsoft.Web/sites/slots': 'app_service'
 };
 
 // New endpoint to get available resource types
@@ -241,8 +307,12 @@ app.post('/api/generate', async (req, res) => {
         const outputDir = path.join(__dirname, 'generated', `${resourceGroup}_${Date.now()}`);
         fs.mkdirSync(outputDir, { recursive: true });
 
-        // Azure token'ını al
-        const token = await azureCredential.getToken("https://management.azure.com/.default");
+        console.log('Starting Terraformer with:', {
+            subscriptionId,
+            resourceGroup,
+            resources: resources || [],
+            resourceIds: resourceIds || []
+        });
 
         // Terraformer komut argümanları
         let terraformerArgs = [
@@ -254,20 +324,38 @@ app.post('/api/generate', async (req, res) => {
 
         // If specific resource IDs are provided, use them; otherwise use resource types
         if (resourceIds && resourceIds.length > 0) {
-            terraformerArgs.push('--resources=' + resourceIds.map(id => id.split('/').pop()).join(','));
-            // Add resource IDs filter if needed
-            terraformerArgs.push('--filter=' + resourceIds.join(','));
+            // For individual resources, we need to determine their types and use those
+            const resourceClient = new ResourceManagementClient(azureCredential, subscriptionId);
+            const resourcesIter = resourceClient.resources.listByResourceGroup(resourceGroup);
+            const selectedResourceTypes = new Set();
+            
+            for await (const resource of resourcesIter) {
+                if (resourceIds.includes(resource.id)) {
+                    const tfType = terraformerResources[resource.type];
+                    if (tfType) {
+                        selectedResourceTypes.add(tfType);
+                    }
+                }
+            }
+            
+            if (selectedResourceTypes.size > 0) {
+                terraformerArgs.push('--resources=' + Array.from(selectedResourceTypes).join(','));
+                console.log('Using resource types for selected resources:', Array.from(selectedResourceTypes));
+            } else {
+                throw new Error('No supported resource types found for selected resources');
+            }
         } else {
             terraformerArgs.push('--resources=' + resources.join(','));
+            console.log('Using resource types:', resources);
         }
 
-        // Terraformer için gerekli ortam değişkenleri
+        console.log('Terraformer command:', 'terraformer', terraformerArgs.join(' '));
+
+        // Terraformer için gerekli ortam değişkenleri - Azure CLI authentication kullan
         const options = {
             env: {
                 ...process.env,
-                'ARM_SUBSCRIPTION_ID': subscriptionId,
-                'ARM_ACCESS_TOKEN': token.token,
-                'AZURE_SUBSCRIPTION_ID': subscriptionId
+                'ARM_SUBSCRIPTION_ID': subscriptionId
             }
         };
 
