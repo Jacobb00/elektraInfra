@@ -9,10 +9,7 @@ Teleform, kullanıcıların form tabanlı girişlerle otomatik olarak **Terrafor
 ### 1️⃣ Form Bazlı Terraform Kod Üretimi
 Kullanıcılar bir web arayüzü üzerinden gerekli bilgileri girerek, otomatik olarak Terraform `.tf` dosyaları üretebilir.
 
-### 2️⃣ Gelişmiş Şablon Desteği
-Projeda  hazır şablonlar içeren bir template galerisi sunulacaktır. Bu galeri; AWS, Azure ve Google Cloud Platform (GCP) gibi çoklu bulut sağlayıcılarına ait servisleri destekleyen kapsamlı Terraform yapılarını içerecektir
 
----
 
 ## 🌐 Canlı Demo
 
@@ -22,17 +19,9 @@ Projeda  hazır şablonlar içeren bir template galerisi sunulacaktır. Bu galer
 > 🚀 Bu demo üzerinden Terraform şablonları oluşturabilir ve test edebilirsiniz.
 
 ---
+## 🌐 Canlı Demo 2
+Canlı demo 1 projesinde kullanıcılar  şablonlar ile terraform kodlarını oluşturabiliyorlardı canlı demo 2 projesinde ise kullanıcı önce azure a bağlanacak ve otomatik olarak istediği kaynakların terrraform kodlarını dışarıya export edebilecek şeklinde tasarlandı 
+proje linki  http://44.222.242.231:3001 (şu an localde çalışan sistem canlı da çalışmıyor üzerinde uğraşıyorum )
 
-## 📡 Güncel API'ler
 
-| Yöntem | Endpoint | Açıklama | Durum |
-|--------|----------|----------|--------|
-| `GET`  | `/api/status`           | Global API durumu             | ✅ Active |
-| `GET`  | `/api/health`           | Uygulama sağlık kontrolü      | ✅ Active |
-| `GET`  | `/api/aws/status`       | AWS servisi durumu            | ✅ Active |
-| `POST` | `/api/aws/ec2`          | EC2 instance oluşturma        | ✅ Active |
-| `POST` | `/api/aws/s3`           | S3 bucket oluşturma           | ✅ Active |
-| `POST` | `/api/aws/rds`          | RDS database oluşturma        | ✅ Active |
-| `GET`  | `/api/download/:fileName` | Oluşturulan `.tf` dosyasını indirme | ✅ Active |
 
----
