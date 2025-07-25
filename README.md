@@ -22,6 +22,7 @@ Kullanıcılar bir web arayüzü üzerinden gerekli bilgileri girerek, otomatik 
 ## 🌐 Canlı Demo 2
 Canlı demo 1 projesinde kullanıcılar  şablonlar ile terraform kodlarını oluşturabiliyorlardı canlı demo 2 projesinde ise kullanıcı önce azure a bağlanacak ve otomatik olarak istediği kaynakların terrraform kodlarını dışarıya export edebilecek şeklinde tasarlandı 
 proje linki  http://44.222.242.231:3001 (şu an localde çalışan sistem canlı da çalışmıyor üzerinde uğraşıyorum )
+Proje kodları master branchinde...
 
 
 
