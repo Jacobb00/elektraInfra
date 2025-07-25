@@ -100,7 +100,7 @@ ZIP içeriği:
 
 Uygulamanın kullanımını gösteren örnek video:
 
-![Örnek Video](a.mp4)
+[📺 Videoyu İzle](https://streamable.com/zz37q8)
 
 ## 🎯 9. Sonuç
 
