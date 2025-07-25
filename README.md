@@ -96,6 +96,12 @@ ZIP içeriği:
 
 ---
 
+## 📽️ Örnek Video
+
+Uygulamanın kullanımını gösteren örnek video:
+
+![Örnek Video](a.mp4)
+
 ## 🎯 9. Sonuç
 
 Kullanıcı ZIP dosyasını açtıktan sonra:
