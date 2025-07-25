@@ -1,0 +1,29 @@
+{
+  "name": "terraformer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "server": "nodemon backend/server.js",
+    "client": "npm start --prefix frontend",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@azure/arm-resources": "^6.1.0",
+    "@azure/arm-subscriptions": "^5.1.0",
+    "@azure/identity": "^4.10.2",
+    "@azure/identity-cache-persistence": "^1.2.0",
+    "archiver": "^7.0.1",
+    "child_process": "^1.0.2",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.4"
+  }
+}
