@@ -8,6 +8,7 @@ Bu proje, kullanıcıdan alınan Azure kimlik bilgileri ile Azure kaynaklarını
 
 - Frontend: `http://localhost:3001`
 - Backend: `http://localhost:5000`
+- Public ip: http://44.222.242.231:3001
 
 Kullanıcı, arayüz üzerinden uygulamaya erişerek Azure'a bağlanabilir ve Terraform kodlarını oluşturabilir.
 
