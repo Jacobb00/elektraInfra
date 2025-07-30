@@ -4,9 +4,13 @@ const { spawn } = require('child_process'); //terraformer komutu için
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
+const dotenv = require('dotenv'); // .env dosyasını yükle
 const { InteractiveBrowserCredential } = require("@azure/identity"); //Azure kimlik doğrulama için     
 const { SubscriptionClient } = require("@azure/arm-subscriptions"); //Azure abonelikleri için
 const { ResourceManagementClient } = require("@azure/arm-resources"); //Azure kaynak grupları için
+
+// .env dosyasını yükle
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -22,15 +26,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // Azure kimlik bilgilerini saklayacak değişken
 let azureCredential = new InteractiveBrowserCredential({
-    redirectUri: "http://localhost:3000",
-    clientId: "04b07795-8ddb-461a-bbee-02f9e1bf7b46", // Azure CLI default client ID
-    tenantId: "celikyakup8585gmail.onmicrosoft.com" // Kullanıcının tenant ID'si
+    redirectUri: process.env.AZURE_REDIRECT_URI || "http://localhost:3000",
+    clientId: process.env.AZURE_CLIENT_ID, // Azure CLI default client ID
+    tenantId: process.env.AZURE_TENANT_ID // Kullanıcının tenant ID'si
 });
 
 // Alternatif credential with organizations (all tenants)
 let azureCredentialOrg = new InteractiveBrowserCredential({
-    redirectUri: "http://localhost:3000",
-    clientId: "04b07795-8ddb-461a-bbee-02f9e1bf7b46",
+    redirectUri: process.env.AZURE_REDIRECT_URI || "http://localhost:3000",
+    clientId: process.env.AZURE_CLIENT_ID,
     tenantId: "organizations"
 });
 
@@ -44,9 +48,9 @@ app.post('/api/azure/switch-tenant', async (req, res) => {
             console.log('Switched to organizations tenant');
         } else {
             azureCredential = new InteractiveBrowserCredential({
-                redirectUri: "http://localhost:3000",
-                clientId: "04b07795-8ddb-461a-bbee-02f9e1bf7b46",
-                tenantId: "celikyakup8585gmail.onmicrosoft.com"
+                redirectUri: process.env.AZURE_REDIRECT_URI || "http://localhost:3000",
+                clientId: process.env.AZURE_CLIENT_ID,
+                tenantId: process.env.AZURE_TENANT_ID
             });
             console.log('Switched to specific tenant');
         }
@@ -305,7 +309,8 @@ app.post('/api/generate', async (req, res) => {
 
         // Çıktı dizinini oluştur
         const outputDir = path.join(__dirname, 'generated', `${resourceGroup}_${Date.now()}`);
-        fs.mkdirSync(outputDir, { recursive: true });
+        const finalOutputDir = path.join(outputDir, 'terraform');
+        fs.mkdirSync(finalOutputDir, { recursive: true });
 
         console.log('Starting Terraformer with:', {
             subscriptionId,
@@ -319,7 +324,8 @@ app.post('/api/generate', async (req, res) => {
             'import',
             'azure',
             '--resource-group=' + resourceGroup,
-            '--path-output=' + outputDir
+            '--path-output=' + outputDir,
+            '--compact'
         ];
 
         // If specific resource IDs are provided, use them; otherwise use resource types
@@ -387,6 +393,158 @@ app.post('/api/generate', async (req, res) => {
                     reject(new Error(error));
                     return;
                 }
+                
+                // Terraformer çıktısını düzenle ve Terraform yapısına dönüştür
+                try {
+                    console.log('Processing Terraformer output...');
+                    
+                    // provider.tf dosyasını oluştur
+                    const providerContent = `terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 3.0.0"
+    }
+  }
+  required_version = ">= 1.0.0"
+}
+
+provider "azurerm" {
+  features {}
+  subscription_id = var.subscription_id
+}`;
+                    fs.writeFileSync(path.join(finalOutputDir, 'provider.tf'), providerContent);
+                    
+                    // Terraformer çıktı dizinindeki .tf dosyalarını işle ve finalOutputDir'e kopyala
+                    const resourceTypeMap = {};
+                    
+                    const processDirectory = (dir) => {
+                        const items = fs.readdirSync(dir, { withFileTypes: true });
+                        
+                        for (const item of items) {
+                            const itemPath = path.join(dir, item.name);
+                            
+                            if (item.isDirectory()) {
+                                // Alt dizinleri işle
+                                processDirectory(itemPath);
+                            } else if (item.name.endsWith('.tf')) {
+                                // .tf dosyalarını oku ve düzenle
+                                let content = fs.readFileSync(itemPath, 'utf8');
+                                
+                                // Provider bloklarını kaldır
+                                content = content.replace(/provider\s+"azurerm"\s+{[^}]*}/g, '');
+                                
+                                // Terraform bloklarını kaldır
+                                content = content.replace(/terraform\s+{[^}]*}/g, '');
+                                
+                                // Virtual Network için flow_timeout_in_minutes değerini düzelt (0 ise 4 yap)
+                                if (content.includes('azurerm_virtual_network') && content.includes('flow_timeout_in_minutes')) {
+                                    content = content.replace(/flow_timeout_in_minutes\s+=\s+"0"/g, 'flow_timeout_in_minutes        = "4"');
+                                }
+                                
+                                // Linux VM için deprecated gentgent_platform_updates_enabled argümanını kaldır
+                                content = content.replace(/vm_agent_platform_updates_enabled\s*=\s*"(false|true)"\s*\n/g, '');
+                                
+                                // Linux VM için platform_fault_domain argümanını kaldır (manuel atanmalı)
+                                content = content.replace(/platform_fault_domain\s*=\s+"-1"\s*\n/g, '');
+                                
+                                // Linux VM için virtual_machine_scale_set_id eksikse ve platform_fault_domain varsa ikisini de kaldır
+                                if (content.includes('azurerm_linux_virtual_machine') && content.includes('platform_fault_domain')) {
+                                    content = content.replace(/platform_fault_domain\s*=\s+"[^"]*"\s*\n/g, '');
+                                }
+                                
+                                // Windows VM için benzer düzeltmeler
+                                if (content.includes('azurerm_windows_virtual_machine') && content.includes('platform_fault_domain')) {
+                                    content = content.replace(/platform_fault_domain\s*=\s+"[^"]*"\s*\n/g, '');
+                                }
+                                
+                                // İçeriği temizle (boş satırları kaldır)
+                                content = content.trim();
+                                
+                                if (content.length === 0) {
+                                    console.log(`Skipping empty file: ${item.name}`);
+                                    continue;
+                                }
+                                
+                                // Kaynak türünü belirle
+                                let resourceType = 'main';
+                                const resourceMatch = content.match(/resource\s+"([^"]*)"/i);
+                                if (resourceMatch && resourceMatch[1]) {
+                                    resourceType = resourceMatch[1].replace('azurerm_', '');
+                                }
+                                
+                                // Kaynak türüne göre dosyaları grupla
+                                if (!resourceTypeMap[resourceType]) {
+                                    resourceTypeMap[resourceType] = [];
+                                }
+                                resourceTypeMap[resourceType].push(content);
+                                
+                                console.log(`Processed: ${item.name} (${resourceType})`);
+                            }
+                        }
+                    };
+                    
+                    // Dosyaları işle
+                    processDirectory(outputDir);
+                    
+                    // Kaynak türlerine göre dosyaları oluştur
+                    for (const [resourceType, contents] of Object.entries(resourceTypeMap)) {
+                        const fileName = `${resourceType}.tf`;
+                        const combinedContent = contents.join('\n\n');
+                        fs.writeFileSync(path.join(finalOutputDir, fileName), combinedContent);
+                        console.log(`Created: ${fileName} with ${contents.length} resources`);
+                    }
+                    
+                    // variables.tf dosyasını oluştur
+                    const variablesContent = `variable "subscription_id" {
+  description = "Azure Subscription ID"
+  type        = string
+  default     = "${subscriptionId}"
+  sensitive   = true
+}
+
+variable "resource_group_name" {
+  description = "Azure Resource Group Name"
+  type        = string
+  default     = "${resourceGroup}"
+}`;
+                    fs.writeFileSync(path.join(finalOutputDir, 'variables.tf'), variablesContent);
+                    
+                    // outputs.tf dosyasını oluştur
+                    const outputsContent = `output "resource_group_name" {
+  value = var.resource_group_name
+  description = "The name of the resource group"
+}
+
+output "subscription_id" {
+  value = var.subscription_id
+  description = "The Azure subscription ID"
+  sensitive = true
+}
+
+output "terraform_workspace" {
+  value = terraform.workspace
+  description = "The Terraform workspace used"
+}`;
+                    fs.writeFileSync(path.join(finalOutputDir, 'outputs.tf'), outputsContent);
+                    
+                    // main.tf dosyasını oluştur
+                    const mainContent = `# Main Terraform configuration file
+# This file contains resources that don't fit into specific categories
+
+# Reference to the Azure Resource Group
+data "azurerm_resource_group" "rg" {
+  name = var.resource_group_name
+}`;
+                    fs.writeFileSync(path.join(finalOutputDir, 'main.tf'), mainContent);
+                    // outputs.tf dosyası zaten yukarıda oluşturuldu, tekrar yazmaya gerek yok
+                    
+                    console.log('Terraform files processed successfully.');
+                } catch (err) {
+                    console.error('Error processing Terraform files:', err);
+                    reject(err);
+                    return;
+                }
 
                 // Başarılı - çıktıyı ziple
                 const zipPath = path.join(__dirname, 'generated', `${resourceGroup}.zip`);
@@ -403,6 +561,7 @@ app.post('/api/generate', async (req, res) => {
                         // Temizlik
                         fs.rmSync(outputDir, { recursive: true, force: true });
                         fs.unlinkSync(zipPath);
+                        console.log('Cleanup completed.');
                     });
                 });
 
@@ -411,7 +570,7 @@ app.post('/api/generate', async (req, res) => {
                 });
 
                 archive.pipe(output);
-                archive.directory(outputDir, false);
+                archive.directory(finalOutputDir, false);
                 archive.finalize();
             });
         }).catch(error => {
