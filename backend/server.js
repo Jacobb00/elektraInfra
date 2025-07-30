@@ -4,13 +4,12 @@ const { spawn } = require('child_process'); //terraformer komutu için
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
-const dotenv = require('dotenv'); // .env dosyasını yükle
+// dotenv kaldırıldı
 const { InteractiveBrowserCredential } = require("@azure/identity"); //Azure kimlik doğrulama için     
 const { SubscriptionClient } = require("@azure/arm-subscriptions"); //Azure abonelikleri için
 const { ResourceManagementClient } = require("@azure/arm-resources"); //Azure kaynak grupları için
 
-// .env dosyasını yükle
-dotenv.config();
+// .env dosyası kaldırıldı
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -26,15 +25,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // Azure kimlik bilgilerini saklayacak değişken
 let azureCredential = new InteractiveBrowserCredential({
-    redirectUri: process.env.AZURE_REDIRECT_URI || "http://localhost:3000",
-    clientId: process.env.AZURE_CLIENT_ID, // Azure CLI default client ID
-    tenantId: process.env.AZURE_TENANT_ID // Kullanıcının tenant ID'si
+    redirectUri: "http://localhost:3000",
+    clientId: "04b07795-8ddb-461a-bbee-02f9e1bf7b46", // Azure CLI default client ID
+    tenantId: "celikyakup8585gmail.onmicrosoft.com" // Kullanıcının tenant ID'si
 });
 
 // Alternatif credential with organizations (all tenants)
 let azureCredentialOrg = new InteractiveBrowserCredential({
-    redirectUri: process.env.AZURE_REDIRECT_URI || "http://localhost:3000",
-    clientId: process.env.AZURE_CLIENT_ID,
+    redirectUri: "http://localhost:3000",
+    clientId: "04b07795-8ddb-461a-bbee-02f9e1bf7b46",
     tenantId: "organizations"
 });
 
@@ -48,9 +47,9 @@ app.post('/api/azure/switch-tenant', async (req, res) => {
             console.log('Switched to organizations tenant');
         } else {
             azureCredential = new InteractiveBrowserCredential({
-                redirectUri: process.env.AZURE_REDIRECT_URI || "http://localhost:3000",
-                clientId: process.env.AZURE_CLIENT_ID,
-                tenantId: process.env.AZURE_TENANT_ID
+                redirectUri: "http://localhost:3000",
+                clientId: "04b07795-8ddb-461a-bbee-02f9e1bf7b46",
+                tenantId: "celikyakup8585gmail.onmicrosoft.com"
             });
             console.log('Switched to specific tenant');
         }
