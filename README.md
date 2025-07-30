@@ -25,4 +25,8 @@ proje linki  http://44.222.242.231:3001 (şu an localde çalışan sistem canlı
 Proje kodları master branchinde...
 
 
+pipeline reposu
+https://github.com/Jacobb00/pipeline
+
+
 
