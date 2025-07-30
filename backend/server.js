@@ -4,12 +4,10 @@ const { spawn } = require('child_process'); //terraformer komutu için
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
-// dotenv kaldırıldı
 const { InteractiveBrowserCredential } = require("@azure/identity"); //Azure kimlik doğrulama için     
 const { SubscriptionClient } = require("@azure/arm-subscriptions"); //Azure abonelikleri için
 const { ResourceManagementClient } = require("@azure/arm-resources"); //Azure kaynak grupları için
 
-// .env dosyası kaldırıldı
 
 const app = express();
 const port = process.env.PORT || 5000;
