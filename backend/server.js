@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { spawn } = require('child_process'); //terraformer komutu için
+const { spawn } = require('child_process'); //aztfexport komutu için
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
@@ -135,78 +135,78 @@ app.get('/api/azure/resourceGroups/:subscriptionId', async (req, res) => {
     }
 });
 
-// Terraformer supported resources mapping
-const terraformerResources = {
+// aztfexport için Azure kaynak türleri - aztfexport doğrudan resource type'ları kullanır
+const aztfexportResources = {
     // Analysis Services
-    'Microsoft.AnalysisServices/servers': 'analysis',
+    'Microsoft.AnalysisServices/servers': 'azurerm_analysis_services_server',
     
     // App Service
-    'Microsoft.Web/sites': 'app_service',
-    'Microsoft.Web/serverfarms': 'app_service',
+    'Microsoft.Web/sites': 'azurerm_app_service',
+    'Microsoft.Web/serverfarms': 'azurerm_app_service_plan',
     
     // Application Gateway
-    'Microsoft.Network/applicationGateways': 'application_gateway',
+    'Microsoft.Network/applicationGateways': 'azurerm_application_gateway',
     
     // Container Services
-    'Microsoft.ContainerInstance/containerGroups': 'container',
-    'Microsoft.ContainerRegistry/registries': 'container',
+    'Microsoft.ContainerInstance/containerGroups': 'azurerm_container_group',
+    'Microsoft.ContainerRegistry/registries': 'azurerm_container_registry',
     
     // Cosmos DB
-    'Microsoft.DocumentDB/databaseAccounts': 'cosmosdb',
+    'Microsoft.DocumentDB/databaseAccounts': 'azurerm_cosmosdb_account',
     
     // Data Factory
-    'Microsoft.DataFactory/factories': 'data_factory',
+    'Microsoft.DataFactory/factories': 'azurerm_data_factory',
     
     // Databases
-    'Microsoft.DBforMariaDB/servers': 'database',
-    'Microsoft.DBforMySQL/servers': 'database',
-    'Microsoft.DBforPostgreSQL/servers': 'database',
-    'Microsoft.Sql/servers': 'database',
-    'Microsoft.Sql/databases': 'database',
+    'Microsoft.DBforMariaDB/servers': 'azurerm_mariadb_server',
+    'Microsoft.DBforMySQL/servers': 'azurerm_mysql_server',
+    'Microsoft.DBforPostgreSQL/servers': 'azurerm_postgresql_server',
+    'Microsoft.Sql/servers': 'azurerm_mssql_server',
+    'Microsoft.Sql/databases': 'azurerm_mssql_database',
     
     // Databricks
-    'Microsoft.Databricks/workspaces': 'databricks',
+    'Microsoft.Databricks/workspaces': 'azurerm_databricks_workspace',
     
     // Disks
-    'Microsoft.Compute/disks': 'disk',
+    'Microsoft.Compute/disks': 'azurerm_managed_disk',
     
     // DNS
-    'Microsoft.Network/dnsZones': 'dns',
+    'Microsoft.Network/dnsZones': 'azurerm_dns_zone',
     
     // Event Hub
-    'Microsoft.EventHub/namespaces': 'eventhub',
+    'Microsoft.EventHub/namespaces': 'azurerm_eventhub_namespace',
     
     // Key Vault
-    'Microsoft.KeyVault/vaults': 'key_vault',
+    'Microsoft.KeyVault/vaults': 'azurerm_key_vault',
     
     // Load Balancer
-    'Microsoft.Network/loadBalancers': 'load_balancer',
+    'Microsoft.Network/loadBalancers': 'azurerm_lb',
     
     // Network Security Groups
-    'Microsoft.Network/networkSecurityGroups': 'network_security_group',
+    'Microsoft.Network/networkSecurityGroups': 'azurerm_network_security_group',
     
     // Public IP
-    'Microsoft.Network/publicIPAddresses': 'public_ip',
+    'Microsoft.Network/publicIPAddresses': 'azurerm_public_ip',
     
     // Resource Groups
-    'Microsoft.Resources/resourceGroups': 'resource_group',
+    'Microsoft.Resources/resourceGroups': 'azurerm_resource_group',
     
     // Storage
-    'Microsoft.Storage/storageAccounts': 'storage',
+    'Microsoft.Storage/storageAccounts': 'azurerm_storage_account',
     
     // Virtual Machines
-    'Microsoft.Compute/virtualMachines': 'virtual_machine',
-    'Microsoft.Compute/virtualMachineScaleSets': 'virtual_machine_scale_set',
+    'Microsoft.Compute/virtualMachines': 'azurerm_linux_virtual_machine,azurerm_windows_virtual_machine',
+    'Microsoft.Compute/virtualMachineScaleSets': 'azurerm_linux_virtual_machine_scale_set,azurerm_windows_virtual_machine_scale_set',
     
     // Virtual Networks
-    'Microsoft.Network/virtualNetworks': 'virtual_network',
-    'Microsoft.Network/virtualNetworks/subnets': 'subnet',
-    'Microsoft.Network/networkInterfaces': 'network_interface',
-    'Microsoft.Network/virtualNetworkGateways': 'virtual_network_gateway',
+    'Microsoft.Network/virtualNetworks': 'azurerm_virtual_network',
+    'Microsoft.Network/virtualNetworks/subnets': 'azurerm_subnet',
+    'Microsoft.Network/networkInterfaces': 'azurerm_network_interface',
+    'Microsoft.Network/virtualNetworkGateways': 'azurerm_virtual_network_gateway',
     
     // Web Apps
-    'Microsoft.Web/sites': 'app_service',
-    'Microsoft.Web/sites/slots': 'app_service'
+    'Microsoft.Web/sites': 'azurerm_app_service',
+    'Microsoft.Web/sites/slots': 'azurerm_app_service'
 };
 
 // New endpoint to get available resource types
@@ -219,7 +219,7 @@ app.get('/api/azure/resourceTypes/:subscriptionId/:resourceGroup', async (req, r
         const availableTypes = new Set();
         
         for await (const resource of resourcesIter) {
-            const tfType = terraformerResources[resource.type];
+            const tfType = aztfexportResources[resource.type];
             if (tfType) {
                 availableTypes.add(tfType);
             }
@@ -248,7 +248,7 @@ app.get('/api/azure/resources/:subscriptionId/:resourceGroup', async (req, res) 
         const resourcesList = [];
         
         for await (const resource of resourcesIter) {
-            const tfType = terraformerResources[resource.type];
+            const tfType = aztfexportResources[resource.type];
             if (tfType) {
                 resourcesList.push({
                     id: resource.id,
@@ -309,20 +309,28 @@ app.post('/api/generate', async (req, res) => {
         const finalOutputDir = path.join(outputDir, 'terraform');
         fs.mkdirSync(finalOutputDir, { recursive: true });
 
-        console.log('Starting Terraformer with:', {
+        console.log('Starting aztfexport with:', {
             subscriptionId,
             resourceGroup,
             resources: resources || [],
             resourceIds: resourceIds || []
         });
 
-        // Terraformer komut argümanları
-        let terraformerArgs = [
-            'import',
-            'azure',
-            '--resource-group=' + resourceGroup,
-            '--path-output=' + outputDir,
-            '--compact'
+        // aztfexport komut argümanları
+        // Output directory'yi temizle
+        if (fs.existsSync(finalOutputDir)) {
+            fs.rmSync(finalOutputDir, { recursive: true, force: true });
+        }
+        fs.mkdirSync(finalOutputDir, { recursive: true });
+        
+        let aztfexportArgs = [
+            'rg',
+            '--subscription-id',
+            subscriptionId,
+            '--output-dir',
+            finalOutputDir,
+            '--overwrite',
+            resourceGroup
         ];
 
         // If specific resource IDs are provided, use them; otherwise use resource types
@@ -334,86 +342,89 @@ app.post('/api/generate', async (req, res) => {
             
             for await (const resource of resourcesIter) {
                 if (resourceIds.includes(resource.id)) {
-                    const tfType = terraformerResources[resource.type];
+                    const tfType = aztfexportResources[resource.type];
                     if (tfType) {
                         selectedResourceTypes.add(tfType);
                     }
                 }
             }
             
-            if (selectedResourceTypes.size > 0) {
-                terraformerArgs.push('--resources=' + Array.from(selectedResourceTypes).join(','));
-                console.log('Using resource types for selected resources:', Array.from(selectedResourceTypes));
-            } else {
-                throw new Error('No supported resource types found for selected resources');
-            }
-        } else {
-            terraformerArgs.push('--resources=' + resources.join(','));
-            console.log('Using resource types:', resources);
+            // aztfexport için specific resource seçimi desteklenmez, tüm resource group export edilir
+            console.log('aztfexport will export all resources in the resource group');
         }
 
-        console.log('Terraformer command:', 'terraformer', terraformerArgs.join(' '));
+        console.log('aztfexport command:', 'aztfexport', aztfexportArgs.join(' '));
 
-        // Terraformer için gerekli ortam değişkenleri - Azure CLI authentication kullan
+        // aztfexport için gerekli ortam değişkenleri - Azure CLI authentication kullan
         const options = {
             env: {
                 ...process.env,
                 'ARM_SUBSCRIPTION_ID': subscriptionId
-            }
+            },
+            cwd: process.cwd()
         };
 
         return new Promise((resolve, reject) => {
-            const terraformer = spawn('terraformer', terraformerArgs, options);
+            const aztfexport = spawn('aztfexport', aztfexportArgs, options);
 
             let stdout = '';
             let stderr = '';
 
-            terraformer.stdout.on('data', (data) => {
+            aztfexport.stdout.on('data', (data) => {
                 stdout += data.toString();
-                console.log(`Terraformer stdout: ${data}`);
+                console.log(`aztfexport stdout: ${data}`);
+                
+                // aztfexport'un interaktif menüsünü handle et
+                const output = data.toString();
+                
+                // Menü görünür görünmez 'w' gönder
+                if (output.includes('w import') || output.includes('import • s save') || output.includes('↑/k up • ↓/j down')) {
+                    setTimeout(() => {
+                        aztfexport.stdin.write('w\n');
+                        console.log('Automatically sent w (import) command to aztfexport');
+                    }, 500);
+                }
+                
+                // Import işlemi tamamlandığında devam et
+                if (output.includes('Press any key to continue') || output.includes('continue') || output.includes('Import completed')) {
+                    setTimeout(() => {
+                        aztfexport.stdin.write('\n');
+                        console.log('Automatically pressed enter to continue');
+                    }, 500);
+                }
+                
+                // Eğer 'q' ile çıkış gerekiyorsa
+                if (output.includes('q quit') && output.includes('Import completed')) {
+                    setTimeout(() => {
+                        aztfexport.stdin.write('q\n');
+                        console.log('Automatically sent q (quit) command to aztfexport');
+                    }, 1000);
+                }
             });
 
-            terraformer.stderr.on('data', (data) => {
+            aztfexport.stderr.on('data', (data) => {
                 stderr += data.toString();
-                console.error(`Terraformer stderr: ${data}`);
+                console.error(`aztfexport stderr: ${data}`);
             });
 
-            terraformer.on('error', (error) => {
-                console.error('Failed to start Terraformer:', error);
-                reject(new Error('Failed to start Terraformer. Is it installed and in PATH?'));
+            aztfexport.on('error', (error) => {
+                console.error('Failed to start aztfexport:', error);
+                reject(new Error('Failed to start aztfexport. Is it installed and in PATH?'));
             });
 
-            terraformer.on('close', (code) => {
+            aztfexport.on('close', (code) => {
                 if (code !== 0) {
-                    console.error(`Terraformer process exited with code ${code}`);
-                    const error = `Terraformer failed:\n${stdout}\n${stderr}`;
+                    console.error(`aztfexport process exited with code ${code}`);
+                    const error = `aztfexport failed:\n${stdout}\n${stderr}`;
                     reject(new Error(error));
                     return;
                 }
                 
-                // Terraformer çıktısını düzenle ve Terraform yapısına dönüştür
+                // aztfexport çıktısını düzenle ve Terraform yapısına dönüştür
                 try {
-                    console.log('Processing Terraformer output...');
+                    console.log('Processing aztfexport output...');
                     
-                    // provider.tf dosyasını oluştur
-                    const providerContent = `terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = ">= 3.0.0"
-    }
-  }
-  required_version = ">= 1.0.0"
-}
-
-provider "azurerm" {
-  features {}
-  subscription_id = var.subscription_id
-}`;
-                    fs.writeFileSync(path.join(finalOutputDir, 'provider.tf'), providerContent);
-                    
-                    // Terraformer çıktı dizinindeki .tf dosyalarını işle ve finalOutputDir'e kopyala
-                    const resourceTypeMap = {};
+                    // aztfexport zaten doğru formatta .tf dosyaları oluşturur
                     
                     const processDirectory = (dir) => {
                         const items = fs.readdirSync(dir, { withFileTypes: true });
@@ -424,38 +435,11 @@ provider "azurerm" {
                             if (item.isDirectory()) {
                                 // Alt dizinleri işle
                                 processDirectory(itemPath);
-                            } else if (item.name.endsWith('.tf')) {
+                            } else if (item.name.endsWith('.tf') && item.name !== 'provider.tf' && item.name !== 'terraform.tf') {
                                 // .tf dosyalarını oku ve düzenle
                                 let content = fs.readFileSync(itemPath, 'utf8');
                                 
-                                // Provider bloklarını kaldır
-                                content = content.replace(/provider\s+"azurerm"\s+{[^}]*}/g, '');
-                                
-                                // Terraform bloklarını kaldır
-                                content = content.replace(/terraform\s+{[^}]*}/g, '');
-                                
-                                // Virtual Network için flow_timeout_in_minutes değerini düzelt (0 ise 4 yap)
-                                if (content.includes('azurerm_virtual_network') && content.includes('flow_timeout_in_minutes')) {
-                                    content = content.replace(/flow_timeout_in_minutes\s+=\s+"0"/g, 'flow_timeout_in_minutes        = "4"');
-                                }
-                                
-                                // Linux VM için deprecated gentgent_platform_updates_enabled argümanını kaldır
-                                content = content.replace(/vm_agent_platform_updates_enabled\s*=\s*"(false|true)"\s*\n/g, '');
-                                
-                                // Linux VM için platform_fault_domain argümanını kaldır (manuel atanmalı)
-                                content = content.replace(/platform_fault_domain\s*=\s+"-1"\s*\n/g, '');
-                                
-                                // Linux VM için virtual_machine_scale_set_id eksikse ve platform_fault_domain varsa ikisini de kaldır
-                                if (content.includes('azurerm_linux_virtual_machine') && content.includes('platform_fault_domain')) {
-                                    content = content.replace(/platform_fault_domain\s*=\s+"[^"]*"\s*\n/g, '');
-                                }
-                                
-                                // Windows VM için benzer düzeltmeler
-                                if (content.includes('azurerm_windows_virtual_machine') && content.includes('platform_fault_domain')) {
-                                    content = content.replace(/platform_fault_domain\s*=\s+"[^"]*"\s*\n/g, '');
-                                }
-                                
-                                // İçeriği temizle (boş satırları kaldır)
+                                // aztfexport zaten temiz çıktı üretir, minimal düzeltme yap
                                 content = content.trim();
                                 
                                 if (content.length === 0) {
@@ -463,82 +447,50 @@ provider "azurerm" {
                                     continue;
                                 }
                                 
-                                // Kaynak türünü belirle
-                                let resourceType = 'main';
-                                const resourceMatch = content.match(/resource\s+"([^"]*)"/i);
-                                if (resourceMatch && resourceMatch[1]) {
-                                    resourceType = resourceMatch[1].replace('azurerm_', '');
-                                }
-                                
-                                // Kaynak türüne göre dosyaları grupla
-                                if (!resourceTypeMap[resourceType]) {
-                                    resourceTypeMap[resourceType] = [];
-                                }
-                                resourceTypeMap[resourceType].push(content);
-                                
-                                console.log(`Processed: ${item.name} (${resourceType})`);
+                                console.log(`Processed: ${item.name}`);
                             }
                         }
                     };
                     
                     // Dosyaları işle
-                    processDirectory(outputDir);
+                    processDirectory(finalOutputDir);
                     
-                    // Kaynak türlerine göre dosyaları oluştur
-                    for (const [resourceType, contents] of Object.entries(resourceTypeMap)) {
-                        const fileName = `${resourceType}.tf`;
-                        const combinedContent = contents.join('\n\n');
-                        fs.writeFileSync(path.join(finalOutputDir, fileName), combinedContent);
-                        console.log(`Created: ${fileName} with ${contents.length} resources`);
+                    // aztfexport zaten gerekli dosyaları oluşturur (provider.tf, terraform.tf vb.)
+                    // main.tf dosyasını oluştur ve tüm kaynakları buraya topla
+                    const mainTfPath = path.join(finalOutputDir, 'main.tf');
+                    let allResources = '';
+                    
+                    // Tüm .tf dosyalarını oku ve main.tf'e birleştir
+                    const tfFiles = fs.readdirSync(finalOutputDir).filter(file => 
+                        file.endsWith('.tf') && 
+                        file !== 'provider.tf' && 
+                        file !== 'terraform.tf' && 
+                        file !== 'main.tf'
+                    );
+                    
+                    for (const tfFile of tfFiles) {
+                        const tfFilePath = path.join(finalOutputDir, tfFile);
+                        const content = fs.readFileSync(tfFilePath, 'utf8');
+                        if (content.trim()) {
+                            allResources += content.trim() + '\n\n';
+                        }
+                        // Orijinal dosyayı sil
+                        fs.unlinkSync(tfFilePath);
                     }
                     
-                    // variables.tf dosyasını oluştur
-                    const variablesContent = `variable "subscription_id" {
-  description = "Azure Subscription ID"
-  type        = string
-  default     = "${subscriptionId}"
-  sensitive   = true
-}
-
-variable "resource_group_name" {
-  description = "Azure Resource Group Name"
-  type        = string
-  default     = "${resourceGroup}"
-}`;
-                    fs.writeFileSync(path.join(finalOutputDir, 'variables.tf'), variablesContent);
-                    
-                    // outputs.tf dosyasını oluştur
-                    const outputsContent = `output "resource_group_name" {
-  value = var.resource_group_name
-  description = "The name of the resource group"
-}
-
-output "subscription_id" {
-  value = var.subscription_id
-  description = "The Azure subscription ID"
-  sensitive = true
-}
-
-output "terraform_workspace" {
-  value = terraform.workspace
-  description = "The Terraform workspace used"
-}`;
-                    fs.writeFileSync(path.join(finalOutputDir, 'outputs.tf'), outputsContent);
-                    
                     // main.tf dosyasını oluştur
-                    const mainContent = `# Main Terraform configuration file
-# This file contains resources that don't fit into specific categories
-
-# Reference to the Azure Resource Group
-data "azurerm_resource_group" "rg" {
-  name = var.resource_group_name
-}`;
-                    fs.writeFileSync(path.join(finalOutputDir, 'main.tf'), mainContent);
-                    // outputs.tf dosyası zaten yukarıda oluşturuldu, tekrar yazmaya gerek yok
+                    if (allResources.trim()) {
+                        fs.writeFileSync(mainTfPath, allResources.trim());
+                        console.log('Created main.tf with all resources');
+                    } else {
+                        const mainTfContent = `# Main Terraform configuration\n# No resources found to import`;
+                        fs.writeFileSync(mainTfPath, mainTfContent);
+                        console.log('Created empty main.tf file');
+                    }
                     
-                    console.log('Terraform files processed successfully.');
+                    console.log('aztfexport files processed successfully.');
                 } catch (err) {
-                    console.error('Error processing Terraform files:', err);
+                    console.error('Error processing aztfexport files:', err);
                     reject(err);
                     return;
                 }
