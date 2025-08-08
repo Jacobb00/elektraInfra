@@ -1,6 +1,7 @@
 const express = require('express');
-const cors = require('cors');
-const { spawn } = require('child_process'); //aztfexport komutu için
+const cors = require('cors'); // frontendden farklı istek atmasını sağalamak için
+const { spawn } = require('child_process'); //aztfexport komutu için shell komutları burda çalıştırılır spawn fonksiyondur onu alırız 
+//spawn exec execfile ve fork fonksiyonları var
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
@@ -18,7 +19,7 @@ app.use(cors({
     credentials: true
 }));
 //json ve form verilerini işleeme
-app.use(express.json());
+app.use(express.json()); //gelen post verilerini okumak için 
 app.use(express.urlencoded({ extended: true }));
 
 // Azure kimlik bilgilerini saklayacak değişken
@@ -34,6 +35,7 @@ let azureCredentialOrg = new InteractiveBrowserCredential({
     clientId: "04b07795-8ddb-461a-bbee-02f9e1bf7b46",
     tenantId: "organizations"
 });
+
 
 // Tenant switching endpoint
 app.post('/api/azure/switch-tenant', async (req, res) => {
@@ -63,13 +65,16 @@ app.post('/api/azure/switch-tenant', async (req, res) => {
 });
 
 // Azure'a bağlanma endpoint'i
-app.post('/api/azure/login', async (req, res) => {
-    try {
+///// app.get= get isteklerini işlr
+//app.put var olan veriyi güncellemek için
+//app.route beliirli istekleri sub altında get post işleyebilmesi için
+app.post('/api/azure/login', async (req, res) => { //req (request) İstek verilerini taşır. Kullanıcının gönderdiği veriler, parametreler, headers, body gibi
+    try { //res cevap göndermek  için kullanılırres.send(), res.json(), res.status() gibi
         console.log('Starting Azure login process...');
         
         // Abonelikleri listeleyelim
-        const subClient = new SubscriptionClient(azureCredential);
-        const subscriptions = await subClient.subscriptions.list();
+        const subClient = new SubscriptionClient(azureCredential); //azure sdk
+        const subscriptions = await subClient.subscriptions.list(); //kullanıcıya ait tüm abonelikleri listele
         
         // Abonelikleri frontend'e gönderelim
         const subList = [];
@@ -98,19 +103,19 @@ app.post('/api/azure/login', async (req, res) => {
     }
 });
 
-// Kaynak gruplarını listeleme endpoint'i
-app.get('/api/azure/resourceGroups/:subscriptionId', async (req, res) => {
+// Kaynak gruplarını listeleme endpoint'i frontend get isteği geliyor ve sonuçlar json olarak döndürülüyor
+app.get('/api/azure/resourceGroups/:subscriptionId', async (req, res) => { //url dinamik parametre içerir
     try {
         const { subscriptionId } = req.params;
         console.log(`Fetching resource groups for subscription: ${subscriptionId}`);
         
-        const resourceClient = new ResourceManagementClient(azureCredential, subscriptionId);
+        const resourceClient = new ResourceManagementClient(azureCredential, subscriptionId); //credential kimlik bilgilerini subscriptipn ise hangi abonelik içine bakacaz
         
-        const resourceGroups = await resourceClient.resourceGroups.list();
+        const resourceGroups = await resourceClient.resourceGroups.list(); //resource group listesini getirr
         const rgList = [];
         
         console.log('Raw resource groups from Azure:');
-        for await (const rg of resourceGroups) {
+        for await (const rg of resourceGroups) { //kaynak grouplar asenkron şekilde dolaşır
             console.log(`- ${rg.name} (${rg.location})`);
             rgList.push({
                 name: rg.name,
@@ -118,8 +123,8 @@ app.get('/api/azure/resourceGroups/:subscriptionId', async (req, res) => {
             });
         }
         
-        console.log(`Found ${rgList.length} resource groups total`);
-        res.json({ success: true, resourceGroups: rgList });
+        console.log(`Found ${rgList.length} resource groups total`); //kaç kaynak groubu var 
+        res.json({ success: true, resourceGroups: rgList }); //frontende aktar
     } catch (error) {
         console.error('Resource groups fetch error:', error);
         console.error('Error details:', {
@@ -141,7 +146,7 @@ const aztfexportResources = {
     'Microsoft.AnalysisServices/servers': 'azurerm_analysis_services_server',
     
     // App Service
-    'Microsoft.Web/sites': 'azurerm_app_service',
+    'Microsoft.Web/sites': 'azurerm_app_service', //sol taraf azure resource type sağ taraf ise terraform resource type
     'Microsoft.Web/serverfarms': 'azurerm_app_service_plan',
     
     // Application Gateway
@@ -212,7 +217,7 @@ const aztfexportResources = {
 // New endpoint to get available resource types
 app.get('/api/azure/resourceTypes/:subscriptionId/:resourceGroup', async (req, res) => {
     try {
-        const { subscriptionId, resourceGroup } = req.params;
+        const { subscriptionId, resourceGroup } = req.params; //url den alınır
         const resourceClient = new ResourceManagementClient(azureCredential, subscriptionId);
         
         const resourcesIter = resourceClient.resources.listByResourceGroup(resourceGroup);
@@ -286,11 +291,11 @@ app.get('/api/azure/resources/:subscriptionId/:resourceGroup', async (req, res) 
 
 // Terraform kodu oluşturma endpoint'i
 app.post('/api/generate', async (req, res) => {
-    try {
+    try { //resource group jacob adı resources da seçilen kaynak türleri
         const { subscriptionId, resourceGroup, resources, resourceIds } = req.body;
 
         if (!subscriptionId || !resourceGroup) {
-            return res.status(400).json({
+            return res.status(400).json({ //gerekli alanlar eksikse 400 hatası ver
                 success: false,
                 error: 'Subscription ID and Resource Group are required'
             });
@@ -305,7 +310,7 @@ app.post('/api/generate', async (req, res) => {
         }
 
         // Çıktı dizinini oluştur
-        const outputDir = path.join(__dirname, 'generated', `${resourceGroup}_${Date.now()}`);
+        const outputDir = path.join(__dirname, 'generated', `${resourceGroup}_${Date.now()}`); //çıktı dizini buraya olur
         const finalOutputDir = path.join(outputDir, 'terraform');
         fs.mkdirSync(finalOutputDir, { recursive: true });
 
@@ -317,13 +322,14 @@ app.post('/api/generate', async (req, res) => {
         });
 
         // aztfexport komut argümanları
-        // Output directory'yi temizle
+        // Output directory'yi temizle eski çıktıları temizle
         if (fs.existsSync(finalOutputDir)) {
             fs.rmSync(finalOutputDir, { recursive: true, force: true });
         }
         fs.mkdirSync(finalOutputDir, { recursive: true });
-        
+         //BURASI
         let aztfexportArgs = [
+            //aztfexport rg --subscription-id xxx --output-dir ./xxx --overwrite myResourceGroup
             'rg',
             '--subscription-id',
             subscriptionId,
@@ -365,17 +371,18 @@ app.post('/api/generate', async (req, res) => {
         };
 
         return new Promise((resolve, reject) => {
-            const aztfexport = spawn('aztfexport', aztfexportArgs, options);
+            //child_process.spawn kullanılarak eztfexport  başlatılır
+            const aztfexport = spawn('aztfexport', aztfexportArgs, options); //terminalde çalıştırılan program
 
-            let stdout = '';
+            let stdout = ''; //ooutputa aktarılan ekrandır burası
             let stderr = '';
 
-            aztfexport.stdout.on('data', (data) => {
+            aztfexport.stdout.on('data', (data) => { //spawn ile node.js içinde bağımsız bi terminal açılıyor
                 stdout += data.toString();
                 console.log(`aztfexport stdout: ${data}`);
                 
                 // aztfexport'un interaktif menüsünü handle et
-                const output = data.toString();
+                const output = data.toString(); //data bir buffer nesnesidir 
                 
                 // Menü görünür görünmez 'w' gönder
                 if (output.includes('w import') || output.includes('import • s save') || output.includes('↑/k up • ↓/j down')) {
